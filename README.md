@@ -1,4 +1,4 @@
-﻿# 🚚 Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
+# 🚚 Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3+-green.svg)](https://spring.io/projects/spring-boot)
@@ -41,7 +41,7 @@ An enterprise-grade, event-driven backend for a food delivery platform inspired 
 ## 📅 14-Day Build Progress
 
 - [x] **Day 1: Infrastructure & Docker Compose (PostgreSQL, Redis, Kafka KRaft, Kafka UI)**
-- [ ] **Day 2**: Project Scaffolding & Database Schema (Flyway + PostgreSQL)
+- [x] **Day 2: Project Scaffolding & Database Schema (Flyway + PostgreSQL)**: Project Scaffolding & Database Schema (Flyway + PostgreSQL)
 - [ ] **Day 3**: Restaurant & Menu Service (CRUD + Swagger UI)
 - [ ] **Day 4**: Customer Accounts & Stateless JWT Security
 - [ ] **Day 5**: Shopping Cart Engine with Redis (TTL Caching)
@@ -77,7 +77,7 @@ docker compose ps
 
 | Service | Port | Description | Web Dashboard |
 | :--- | :--- | :--- | :--- |
-| **PostgreSQL 16** | `5432` | Relational database (`food_delivery_db`) | Via DBeaver or psql |
+| **PostgreSQL 16** | `5433` | Relational database (`food_delivery_db`) | Via DBeaver or psql |
 | **Redis 7** | `6379` | In-memory cache & geospatial store | `redis-cli` |
 | **Apache Kafka (KRaft)** | `9092` | Event bus for distributed sagas | N/A |
 | **Kafka UI** | `8085` | Web dashboard to monitor topics & messages | [http://localhost:8085](http://localhost:8085) |
