@@ -1,0 +1,59 @@
+﻿# Compiled class file
+*.class
+
+# Log files
+*.log
+logs/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Gradle
+.gradle
+/build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.classpath
+.project
+.settings/
+.springBeans
+.factorypath
+.vscode/
+
+# Environment and Docker Data
+.env
+docker-data/
+postgres-data/
+redis-data/
+kafka-data/
+
+# OS files
+.DS_Store
+Thumbs.db
