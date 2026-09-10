@@ -112,3 +112,14 @@ export const getCustomerOrders = async () => {
   const response = await apiClient.get('/orders');
   return response.data.data;
 };
+
+// Payment APIs with Distributed Idempotency
+export const processPayment = async (paymentData) => {
+  const response = await apiClient.post('/payments/process', paymentData);
+  return response.data.data;
+};
+
+export const getPaymentReceipt = async (orderId) => {
+  const response = await apiClient.get(`/payments/order/${orderId}`);
+  return response.data.data;
+};

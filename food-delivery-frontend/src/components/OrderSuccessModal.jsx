@@ -13,6 +13,7 @@ export default function OrderSuccessModal({
   isOpen,
   onClose,
   order,
+  payment,
 }) {
   if (!isOpen || !order) return null;
 
@@ -49,6 +50,34 @@ export default function OrderSuccessModal({
         <p style={{ fontSize: '0.88rem', color: '#686b78', marginBottom: '1.25rem' }}>
           Order <strong>#ORD-{order.id}</strong> placed with <strong>{order.restaurantName}</strong> ({order.restaurantCity})
         </p>
+
+        {/* Payment Transaction Receipt */}
+        {payment && (
+          <div style={{
+            background: '#ebfbee',
+            border: '1px solid #b2f2bb',
+            borderRadius: 14,
+            padding: '0.75rem 1rem',
+            textAlign: 'left',
+            fontSize: '0.82rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}>
+            <div>
+              <span style={{ fontSize: '0.72rem', color: '#2b8a3e', display: 'block', fontWeight: 600 }}>
+                Transaction ID: {payment.transactionId}
+              </span>
+              <strong style={{ color: '#2b8a3e', fontSize: '0.85rem' }}>
+                Paid via {payment.paymentMethod} • ₹{payment.amount}
+              </strong>
+            </div>
+            <span style={{ background: '#2b8a3e', color: '#fff', fontSize: '0.7rem', fontWeight: 800, padding: '3px 8px', borderRadius: 12 }}>
+              PAID
+            </span>
+          </div>
+        )}
 
         {/* ETA & Status Banner */}
         <div style={{

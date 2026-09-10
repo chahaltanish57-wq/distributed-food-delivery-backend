@@ -5,6 +5,7 @@ import MenuModal from './components/MenuModal';
 import AuthModal from './components/AuthModal';
 import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
+import PaymentModal from './components/PaymentModal';
 import OrderSuccessModal from './components/OrderSuccessModal';
 import { 
   getRestaurants, 
@@ -32,8 +33,11 @@ export default function App() {
   const [conflictModal, setConflictModal] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Day 6: Checkout & Order Modals State
+  // Day 6 & 7: Checkout & Payment State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [pendingPaymentOrder, setPendingPaymentOrder] = useState(null);
+  const [completedPayment, setCompletedPayment] = useState(null);
   const [successOrder, setSuccessOrder] = useState(null);
   const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
 
@@ -141,7 +145,7 @@ export default function App() {
     }
   };
 
-  // Day 6: Checkout Initiation & Execution
+  // Day 6 & 7: Checkout & Payment Flow
   const handleStartCheckout = () => {
     if (!user) {
       setPendingCheckoutAfterLogin(true);
@@ -157,9 +161,20 @@ export default function App() {
     const order = await createOrder(orderPayload);
     setCart(null);
     setIsCheckoutOpen(false);
-    setSuccessOrder(order);
-    showToast(`Order #ORD-${order.id} placed successfully!`);
+    setPendingPaymentOrder(order);
+    setIsPaymentOpen(true);
+    showToast(`Order #ORD-${order.id} created! Choose payment method.`);
     return order;
+  };
+
+  const handlePaymentSuccess = (paymentResponse) => {
+    setIsPaymentOpen(false);
+    setCompletedPayment(paymentResponse);
+    setSuccessOrder({
+      ...pendingPaymentOrder,
+      status: 'ORDER_PLACED'
+    });
+    showToast(`Payment of ₹${pendingPaymentOrder?.totalAmount} verified! Order confirmed.`);
   };
 
   const handleAuthSuccess = async (data) => {
@@ -189,6 +204,7 @@ export default function App() {
     localStorage.removeItem('user');
     setUser(null);
     setIsCheckoutOpen(false);
+    setIsPaymentOpen(false);
     showToast('Signed out successfully');
     getCart().then(setCart).catch(console.error);
   };
@@ -319,7 +335,7 @@ export default function App() {
         />
       )}
 
-      {/* Slide-out Cart Drawer with Pure CSS */}
+      {/* Slide-out Cart Drawer */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -338,11 +354,24 @@ export default function App() {
         onConfirmOrder={handleConfirmOrder}
       />
 
-      {/* Day 6: Order Success Modal */}
+      {/* Day 7: Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        order={pendingPaymentOrder}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* Day 6 & 7: Order Success Modal with Payment Receipt */}
       <OrderSuccessModal
         isOpen={!!successOrder}
-        onClose={() => setSuccessOrder(null)}
+        onClose={() => {
+          setSuccessOrder(null);
+          setPendingPaymentOrder(null);
+          setCompletedPayment(null);
+        }}
         order={successOrder}
+        payment={completedPayment}
       />
 
       {/* Single-Restaurant Conflict Modal */}

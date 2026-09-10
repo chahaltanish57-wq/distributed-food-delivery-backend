@@ -51,9 +51,10 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedRestaurants() {
-        // Clear previous Bangalore restaurants to ensure clean Noida & Dehradun data
-        menuItemRepository.deleteAll();
-        restaurantRepository.deleteAll();
+        if (restaurantRepository.count() > 0) {
+            log.info("Restaurants and menus already seeded. Skipping seeder.");
+            return;
+        }
 
         log.info("Seeding authentic Noida and Dehradun restaurants with INR pricing...");
 
