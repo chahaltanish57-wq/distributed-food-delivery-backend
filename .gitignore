@@ -1,4 +1,4 @@
-﻿# Compiled class file
+# Compiled class file
 *.class
 
 # Log files
@@ -57,3 +57,6 @@ kafka-data/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Scratch and test files
+scratch/

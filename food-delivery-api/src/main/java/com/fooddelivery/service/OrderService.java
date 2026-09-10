@@ -14,6 +14,8 @@ import com.fooddelivery.entity.Restaurant;
 import com.fooddelivery.repository.MenuItemRepository;
 import com.fooddelivery.repository.OrderRepository;
 import com.fooddelivery.repository.RestaurantRepository;
+import com.fooddelivery.common.event.OrderCreatedEvent;
+import com.fooddelivery.kafka.producer.OrderEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class OrderService {
     private final MenuItemRepository menuItemRepository;
     private final CartService cartService;
     private final OrderStateMachine orderStateMachine;
+    private final OrderEventProducer orderEventProducer;
 
     /**
      * Convert active Redis cart into persistent PostgreSQL Order in PAYMENT_PENDING state.
@@ -91,7 +94,29 @@ public class OrderService {
         // Atomically wipe the temporary cart from Redis
         cartService.clearCart(cartKey);
 
-        return toDTO(savedOrder, request.getContactPhone() != null ? request.getContactPhone() : customer.getPhone());
+        OrderDTO orderDTO = toDTO(savedOrder, request.getContactPhone() != null ? request.getContactPhone() : customer.getPhone());
+
+        // Day 8: Publish Kafka OrderCreatedEvent for distributed saga & kitchen dispatch
+        try {
+            OrderCreatedEvent event = OrderCreatedEvent.builder()
+                    .orderId(savedOrder.getId())
+                    .customerId(customer.getId())
+                    .customerName(customer.getFullName())
+                    .customerEmail(customer.getEmail())
+                    .customerPhone(orderDTO.getContactPhone())
+                    .restaurantId(restaurant.getId())
+                    .restaurantName(restaurant.getName())
+                    .deliveryAddress(savedOrder.getDeliveryAddress())
+                    .totalAmount(savedOrder.getTotalAmount())
+                    .items(orderDTO.getItems())
+                    .createdAt(savedOrder.getCreatedAt() != null ? savedOrder.getCreatedAt() : java.time.Instant.now())
+                    .build();
+            orderEventProducer.publishOrderCreated(event);
+        } catch (Exception ex) {
+            log.error("Failed to emit OrderCreatedEvent for Order #{}: {}", savedOrder.getId(), ex.getMessage(), ex);
+        }
+
+        return orderDTO;
     }
 
     @Transactional(readOnly = true)

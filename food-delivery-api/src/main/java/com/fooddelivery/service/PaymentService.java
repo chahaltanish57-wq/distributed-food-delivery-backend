@@ -9,6 +9,8 @@ import com.fooddelivery.entity.Order;
 import com.fooddelivery.entity.Payment;
 import com.fooddelivery.repository.OrderRepository;
 import com.fooddelivery.repository.PaymentRepository;
+import com.fooddelivery.common.event.PaymentCompletedEvent;
+import com.fooddelivery.kafka.producer.PaymentEventProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -31,6 +33,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final StringRedisTemplate redisTemplate;
     private final OrderStateMachine orderStateMachine;
+    private final PaymentEventProducer paymentEventProducer;
 
     /**
      * Process payment with distributed Redis SETNX idempotency lock.
@@ -117,6 +120,22 @@ public class PaymentService {
             Payment savedPayment = paymentRepository.save(payment);
             log.info("Payment #{} authorized for Order #{} [Txn: {}, Amount: ₹{}]",
                     savedPayment.getId(), order.getId(), transactionId, savedPayment.getAmount());
+
+            // Day 8: Publish Kafka PaymentCompletedEvent for distributed saga & notifications
+            try {
+                PaymentCompletedEvent event = PaymentCompletedEvent.builder()
+                        .paymentId(savedPayment.getId())
+                        .orderId(order.getId())
+                        .transactionId(savedPayment.getTransactionId())
+                        .amount(savedPayment.getAmount())
+                        .paymentMethod(savedPayment.getPaymentMethod())
+                        .paymentStatus(savedPayment.getPaymentStatus())
+                        .completedAt(savedPayment.getCreatedAt() != null ? savedPayment.getCreatedAt() : java.time.Instant.now())
+                        .build();
+                paymentEventProducer.publishPaymentCompleted(event);
+            } catch (Exception ex) {
+                log.error("Failed to emit PaymentCompletedEvent for Order #{}: {}", order.getId(), ex.getMessage(), ex);
+            }
 
             return toResponse(savedPayment, "Payment completed successfully! Order placed.");
 
