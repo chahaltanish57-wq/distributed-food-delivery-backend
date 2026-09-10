@@ -518,3 +518,253 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ================= Cart Drawer (Slide-out Right Panel) ================= */
+.cart-drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1500;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cart-drawer {
+  width: 440px;
+  max-width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: slideDrawer 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideDrawer {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.cart-drawer-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+}
+
+.cart-drawer-title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.cart-drawer-icon {
+  width: 40px;
+  height: 40px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Empty Cart View */
+.cart-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  padding: 3rem 1rem;
+  gap: 1rem;
+}
+
+.cart-empty-icon {
+  width: 90px;
+  height: 90px;
+  background: var(--primary-light);
+  color: var(--primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Delivery Free Banner */
+.cart-banner {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  line-height: 1.4;
+}
+.cart-banner-amber {
+  background: #fff9db;
+  border: 1px solid #ffe066;
+  color: #855700;
+}
+.cart-banner-green {
+  background: #ebfbee;
+  border: 1px solid #b2f2bb;
+  color: #2b8a3e;
+}
+
+/* Items in Cart */
+.cart-item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.cart-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px dashed var(--border-light);
+}
+
+/* Quantity Control Pill */
+.qty-pill {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1.5px solid var(--green-veg);
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  user-select: none;
+}
+.qty-pill-btn {
+  background: none;
+  border: none;
+  padding: 0.35rem 0.65rem;
+  color: var(--green-veg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  transition: background 0.15s;
+}
+.qty-pill-btn:hover {
+  background: #f4faf6;
+}
+.qty-pill-count {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--green-veg);
+  min-width: 24px;
+  text-align: center;
+}
+
+/* Bill Details Box */
+.cart-bill-box {
+  background: #f8f9fa;
+  border: 1px solid var(--border-light);
+  border-radius: 16px;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.cart-bill-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+.cart-bill-total {
+  border-top: 1px solid #dee2e6;
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Footer & Checkout Button */
+.cart-drawer-footer {
+  padding: 1rem 1.5rem 1.25rem;
+  border-top: 1px solid var(--border-light);
+  background: #ffffff;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+.cart-checkout-btn {
+  width: 100%;
+  background: var(--green-veg);
+  color: #ffffff;
+  border: none;
+  padding: 0.95rem 1.25rem;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 4px 14px rgba(15, 138, 101, 0.35);
+  transition: all 0.15s;
+}
+.cart-checkout-btn:hover {
+  background: #0d7555;
+  transform: translateY(-1px);
+}
+.cart-clear-btn {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.2rem;
+  transition: color 0.15s;
+}
+.cart-clear-btn:hover {
+  color: var(--red-nonveg);
+}
+
+/* Conflict Modal */
+.conflict-modal-content {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.2s ease-out;
+}

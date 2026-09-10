@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { X, Star, Clock, Check } from 'lucide-react';
+import { X, Star, Clock, Plus, Minus } from 'lucide-react';
 import { getRestaurantMenu } from '../api';
 
-export default function MenuModal({ restaurant, onClose, onAddToCart }) {
+export default function MenuModal({ 
+  restaurant, 
+  onClose, 
+  onAddToCart, 
+  cart, 
+  onUpdateQuantity 
+}) {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
-  const [addedItemIds, setAddedItemIds] = useState(new Set());
 
   useEffect(() => {
     if (!restaurant) return;
@@ -25,18 +30,6 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
     if (selectedCategory === 'ALL') return true;
     return item.category === selectedCategory;
   });
-
-  const handleAdd = (item) => {
-    onAddToCart(item, restaurant);
-    setAddedItemIds((prev) => new Set(prev).add(item.id));
-    setTimeout(() => {
-      setAddedItemIds((prev) => {
-        const next = new Set(prev);
-        next.delete(item.id);
-        return next;
-      });
-    }, 1200);
-  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -84,7 +77,9 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
             <p style={{ textAlign: 'center', color: '#868e96', padding: '2rem' }}>No dishes found in this category.</p>
           ) : (
             filteredItems.map((item) => {
-              const isAdded = addedItemIds.has(item.id);
+              const cartItem = cart?.items?.find((ci) => ci.menuItemId === item.id);
+              const quantityInCart = cartItem ? cartItem.quantity : 0;
+
               return (
                 <div key={item.id} className="menu-item-card">
                   <div className="menu-item-info">
@@ -102,22 +97,43 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
                     ) : (
                       <div style={{ width: 110, height: 95, borderRadius: 12, background: '#e9ecef' }} />
                     )}
-                    <button
-                      className="add-item-btn"
-                      onClick={() => handleAdd(item)}
-                      style={{
-                        background: isAdded ? '#0f8a65' : '#ffffff',
-                        color: isAdded ? '#ffffff' : '#0f8a65',
-                      }}
-                    >
-                      {isAdded ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                          <Check size={14} /> ADDED
+
+                    {/* Quantity Pill if in Cart, else + ADD Button */}
+                    {quantityInCart > 0 ? (
+                      <div 
+                        className="qty-pill" 
+                        style={{ 
+                          position: 'absolute', 
+                          bottom: '-8px',
+                          background: '#ffffff'
+                        }}
+                      >
+                        <button
+                          className="qty-pill-btn"
+                          onClick={() => onUpdateQuantity(item.id, -1)}
+                          title="Decrease"
+                        >
+                          <Minus size={13} />
+                        </button>
+                        <span className="qty-pill-count">
+                          {quantityInCart}
                         </span>
-                      ) : (
-                        '+ ADD'
-                      )}
-                    </button>
+                        <button
+                          className="qty-pill-btn"
+                          onClick={() => onUpdateQuantity(item.id, 1)}
+                          title="Increase"
+                        >
+                          <Plus size={13} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="add-item-btn"
+                        onClick={() => onAddToCart(item, restaurant)}
+                      >
+                        + ADD
+                      </button>
+                    )}
                   </div>
                 </div>
               );

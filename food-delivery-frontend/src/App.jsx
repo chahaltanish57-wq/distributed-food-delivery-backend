@@ -153,7 +153,6 @@ export default function App() {
     localStorage.removeItem('user');
     setUser(null);
     showToast('Signed out successfully');
-    // Refresh cart for guest session
     getCart().then(setCart).catch(console.error);
   };
 
@@ -272,16 +271,18 @@ export default function App() {
         )}
       </main>
 
-      {/* Menu Modal */}
+      {/* Menu Modal with Inline Quantity Controls */}
       {selectedRestaurant && (
         <MenuModal
           restaurant={selectedRestaurant}
           onClose={() => setSelectedRestaurant(null)}
           onAddToCart={handleAddToCart}
+          cart={cart}
+          onUpdateQuantity={handleUpdateQuantity}
         />
       )}
 
-      {/* Slide-out Cart Drawer */}
+      {/* Slide-out Cart Drawer with Pure CSS */}
       <CartDrawer
         isOpen={isCartOpen}
         onClose={() => setIsCartOpen(false)}
@@ -296,30 +297,61 @@ export default function App() {
 
       {/* Single-Restaurant Conflict Modal */}
       {conflictModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center animate-in fade-in zoom-in-95 duration-200">
-            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8" />
+        <div className="modal-overlay" onClick={() => setConflictModal(null)}>
+          <div className="conflict-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{
+              width: 56,
+              height: 56,
+              borderRadius: '50%',
+              background: '#fff3bf',
+              color: '#d9480f',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 1.25rem'
+            }}>
+              <AlertTriangle size={32} />
             </div>
             
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#1e2229', marginBottom: '0.5rem' }}>
               Replace cart items?
             </h3>
             
-            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-              Your cart already contains items from <strong className="text-gray-800">{conflictModal.currentRestaurantName}</strong>. A cart can only have items from one restaurant at a time.
+            <p style={{ fontSize: '0.9rem', color: '#686b78', lineHeight: 1.5, marginBottom: '1.5rem' }}>
+              Your cart already contains items from <strong style={{ color: '#1e2229' }}>{conflictModal.currentRestaurantName}</strong>. A cart can only contain dishes from one restaurant at a time.
             </p>
 
-            <div className="flex space-x-3">
+            <div style={{ display: 'flex', gap: '0.85rem' }}>
               <button
                 onClick={() => setConflictModal(null)}
-                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition cursor-pointer"
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1rem',
+                  borderRadius: 12,
+                  border: '1px solid #ced4da',
+                  background: '#ffffff',
+                  color: '#495057',
+                  fontWeight: 700,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer'
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmReplaceCart}
-                className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-500/25 transition cursor-pointer"
+                style={{
+                  flex: 1,
+                  padding: '0.75rem 1rem',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#fc8019',
+                  color: '#ffffff',
+                  fontWeight: 800,
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(252, 128, 25, 0.4)'
+                }}
               >
                 Yes, Replace
               </button>
