@@ -9,6 +9,15 @@ export const apiClient = axios.create({
   },
 });
 
+// Auto-attach JWT Bearer Token if logged in
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const getRestaurants = async () => {
   const response = await apiClient.get('/restaurants');
   return response.data.data;
@@ -17,5 +26,20 @@ export const getRestaurants = async () => {
 export const getRestaurantMenu = async (restaurantId, category) => {
   const params = category ? { category } : {};
   const response = await apiClient.get(`/restaurants/${restaurantId}/menu`, { params });
+  return response.data.data;
+};
+
+export const login = async (email, password) => {
+  const response = await apiClient.post('/auth/login', { email, password });
+  return response.data.data;
+};
+
+export const register = async (userData) => {
+  const response = await apiClient.post('/auth/register', userData);
+  return response.data.data;
+};
+
+export const getMe = async () => {
+  const response = await apiClient.get('/auth/me');
   return response.data.data;
 };

@@ -1,12 +1,15 @@
 package com.fooddelivery.config;
 
+import com.fooddelivery.entity.Customer;
 import com.fooddelivery.entity.MenuItem;
 import com.fooddelivery.entity.Restaurant;
+import com.fooddelivery.repository.CustomerRepository;
 import com.fooddelivery.repository.MenuItemRepository;
 import com.fooddelivery.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -19,9 +22,34 @@ public class DataSeeder implements CommandLineRunner {
 
     private final RestaurantRepository restaurantRepository;
     private final MenuItemRepository menuItemRepository;
+    private final CustomerRepository customerRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) {
+        seedCustomer();
+        seedRestaurants();
+    }
+
+    private void seedCustomer() {
+        if (customerRepository.count() > 0) {
+            return;
+        }
+
+        log.info("Seeding default demo customer: customer@swiggy.com");
+        Customer demoCustomer = Customer.builder()
+                .fullName("John Doe")
+                .email("customer@swiggy.com")
+                .phone("+91 9876543210")
+                .passwordHash(passwordEncoder.encode("password123"))
+                .address("Apartment 4B, Indiranagar, Bangalore")
+                .role("ROLE_CUSTOMER")
+                .build();
+        customerRepository.save(demoCustomer);
+        log.info("Demo customer seeded successfully!");
+    }
+
+    private void seedRestaurants() {
         if (restaurantRepository.count() > 0) {
             log.info("Database already seeded with restaurants. Skipping seeder.");
             return;

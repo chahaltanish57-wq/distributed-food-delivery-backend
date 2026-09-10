@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import RestaurantCard from './components/RestaurantCard';
 import MenuModal from './components/MenuModal';
+import AuthModal from './components/AuthModal';
 import { getRestaurants } from './api';
 import { Flame, Star, Zap, Leaf, CheckCircle } from 'lucide-react';
 
@@ -14,6 +15,17 @@ export default function App() {
   const [filterType, setFilterType] = useState('ALL');
   const [cart, setCart] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Authentication State
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   useEffect(() => {
     getRestaurants()
@@ -40,6 +52,20 @@ export default function App() {
     }, 2500);
   };
 
+  const handleAuthSuccess = (data) => {
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data));
+    setUser(data);
+    showToast(`Welcome, ${data.fullName.split(' ')[0]}!`);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    showToast('Signed out successfully');
+  };
+
   // Filter & Search Logic
   const filteredRestaurants = restaurants.filter((r) => {
     const matchesSearch =
@@ -58,17 +84,22 @@ export default function App() {
   return (
     <div>
       <Navbar
+        user={user}
         cartCount={cart.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         onCartClick={() => showToast(`Cart has ${cart.length} item(s). Total: $${cart.reduce((sum, item) => sum + Number(item.price), 0).toFixed(2)}`)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        onLogout={handleLogout}
       />
 
       <main className="container">
         {/* Swiggy Hero Banner */}
         <div className="hero-banner">
           <div>
-            <h1 className="hero-title">Hungry? Order from Top Kitchens</h1>
+            <h1 className="hero-title">
+              {user ? `Welcome back, ${user.fullName.split(' ')[0]}!` : 'Hungry? Order from Top Kitchens'}
+            </h1>
             <p className="hero-subtitle">
               Live event-driven food delivery backend powered by Spring Boot, Redis & Kafka.
             </p>
@@ -154,6 +185,13 @@ export default function App() {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+      />
 
       {/* Toast Notification */}
       {toastMessage && (

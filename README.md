@@ -1,4 +1,4 @@
-# ðŸšš Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
+# Ã°Å¸Å¡Å¡ Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3+-green.svg)](https://spring.io/projects/spring-boot)
@@ -11,39 +11,39 @@ An enterprise-grade, event-driven backend for a food delivery platform inspired 
 
 ---
 
-## ðŸ—ºï¸ System Architecture
+## Ã°Å¸â€”ÂºÃ¯Â¸Â System Architecture
 
 ```
 [Customer App]         [Restaurant Portal]         [Delivery Partner App]
-       â”‚                       â”‚                             â”‚
-       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                               â–¼
+       Ã¢â€â€š                       Ã¢â€â€š                             Ã¢â€â€š
+       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¼Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Ëœ
+                               Ã¢â€“Â¼
                    [Spring Cloud API Gateway]
-                               â”‚
-       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-       â–¼               â–¼               â–¼               â–¼
+                               Ã¢â€â€š
+       Ã¢â€Å’Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â´Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â
+       Ã¢â€“Â¼               Ã¢â€“Â¼               Ã¢â€“Â¼               Ã¢â€“Â¼
 [Order Service] [Payment Service] [Delivery Svc] [Restaurant Svc]
   (State Machine) (Idempotency)   (Redis Geo)     (Catalog/Menu)
-       â”‚               â”‚               â”‚               â”‚
-       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                       â–¼               â–¼
+       Ã¢â€â€š               Ã¢â€â€š               Ã¢â€â€š               Ã¢â€â€š
+       Ã¢â€â€Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¼Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Â¼Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€Ëœ
+                       Ã¢â€“Â¼               Ã¢â€“Â¼
             [Apache Kafka]     [Redis (Cache/Locks)]
-                   â”‚
-                   â–¼
-       [Notification Service]  â”€â”€â–¶  (WebSockets / STOMP)
-                   â”‚
-                   â–¼
-         [AI Service (Gemini)] â”€â”€â–¶  (Support Bot, ETA, Recommender)
+                   Ã¢â€â€š
+                   Ã¢â€“Â¼
+       [Notification Service]  Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Â¶  (WebSockets / STOMP)
+                   Ã¢â€â€š
+                   Ã¢â€“Â¼
+         [AI Service (Gemini)] Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€“Â¶  (Support Bot, ETA, Recommender)
 ```
 
 ---
 
-## ðŸ“… 14-Day Build Progress
+## Ã°Å¸â€œâ€¦ 14-Day Build Progress
 
 - [x] **Day 1: Infrastructure & Docker Compose (PostgreSQL, Redis, Kafka KRaft, Kafka UI)**
 - [x] **Day 2: Project Scaffolding & Database Schema (Flyway + PostgreSQL)**: Project Scaffolding & Database Schema (Flyway + PostgreSQL)
 - [x] **Day 3: Restaurant & Menu Service + Swiggy Web UI (React + Vite)**: Restaurant & Menu Service (CRUD + Swagger UI)
-- [ ] **Day 4**: Customer Accounts & Stateless JWT Security
+- [x] **Day 4: Customer Accounts & Stateless JWT Authentication (Full-Stack)**: Customer Accounts & Stateless JWT Security
 - [ ] **Day 5**: Shopping Cart Engine with Redis (TTL Caching)
 - [ ] **Day 6**: Order State Machine Engine
 - [ ] **Day 7**: Payment Service with Distributed Idempotency
@@ -57,7 +57,7 @@ An enterprise-grade, event-driven backend for a food delivery platform inspired 
 
 ---
 
-## ðŸš€ Day 1: Local Infrastructure Quickstart
+## Ã°Å¸Å¡â‚¬ Day 1: Local Infrastructure Quickstart
 
 ### Prerequisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Running with WSL2 backend on Windows)
@@ -85,7 +85,7 @@ docker compose ps
 
 ---
 
-## ðŸ› ï¸ Tech Stack & Key Design Patterns
+## Ã°Å¸â€ºÂ Ã¯Â¸Â Tech Stack & Key Design Patterns
 * **Language & Framework**: Java 21 LTS, Spring Boot 3.3+
 * **Distributed Messaging**: Apache Kafka with KRaft (Zookeeper-less)
 * **High-Speed Cache & Geo**: Redis (Geospatial indexing via `GEOADD`/`GEOSEARCH`, Redisson Distributed Locks)
