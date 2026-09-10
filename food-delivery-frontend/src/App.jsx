@@ -4,13 +4,16 @@ import RestaurantCard from './components/RestaurantCard';
 import MenuModal from './components/MenuModal';
 import AuthModal from './components/AuthModal';
 import CartDrawer from './components/CartDrawer';
+import CheckoutModal from './components/CheckoutModal';
+import OrderSuccessModal from './components/OrderSuccessModal';
 import { 
   getRestaurants, 
   getCart, 
   addToCart, 
   updateCartItem, 
   clearCart, 
-  mergeCart 
+  mergeCart,
+  createOrder
 } from './api';
 import { Flame, Star, Zap, Leaf, CheckCircle, AlertTriangle } from 'lucide-react';
 
@@ -28,6 +31,11 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [conflictModal, setConflictModal] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Day 6: Checkout & Order Modals State
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [successOrder, setSuccessOrder] = useState(null);
+  const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
 
   // Authentication State
   const [user, setUser] = useState(() => {
@@ -133,6 +141,27 @@ export default function App() {
     }
   };
 
+  // Day 6: Checkout Initiation & Execution
+  const handleStartCheckout = () => {
+    if (!user) {
+      setPendingCheckoutAfterLogin(true);
+      setIsAuthOpen(true);
+      showToast('Please sign in or create an account to checkout.');
+      return;
+    }
+    setIsCartOpen(false);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleConfirmOrder = async (orderPayload) => {
+    const order = await createOrder(orderPayload);
+    setCart(null);
+    setIsCheckoutOpen(false);
+    setSuccessOrder(order);
+    showToast(`Order #ORD-${order.id} placed successfully!`);
+    return order;
+  };
+
   const handleAuthSuccess = async (data) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
@@ -146,12 +175,20 @@ export default function App() {
     } catch (e) {
       console.error('Failed to merge guest cart on login:', e);
     }
+
+    // Auto-proceed to checkout if user was waiting
+    if (pendingCheckoutAfterLogin) {
+      setPendingCheckoutAfterLogin(false);
+      setIsCartOpen(false);
+      setIsCheckoutOpen(true);
+    }
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setIsCheckoutOpen(false);
     showToast('Signed out successfully');
     getCart().then(setCart).catch(console.error);
   };
@@ -289,10 +326,23 @@ export default function App() {
         cart={cart}
         onUpdateQuantity={handleUpdateQuantity}
         onClearCart={handleClearCart}
-        onCheckout={() => {
-          setIsCartOpen(false);
-          showToast('Checkout flow ready for Day 6!');
-        }}
+        onCheckout={handleStartCheckout}
+      />
+
+      {/* Day 6: Checkout Modal */}
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cart={cart}
+        user={user}
+        onConfirmOrder={handleConfirmOrder}
+      />
+
+      {/* Day 6: Order Success Modal */}
+      <OrderSuccessModal
+        isOpen={!!successOrder}
+        onClose={() => setSuccessOrder(null)}
+        order={successOrder}
       />
 
       {/* Single-Restaurant Conflict Modal */}
@@ -363,7 +413,10 @@ export default function App() {
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthOpen}
-        onClose={() => setIsAuthOpen(false)}
+        onClose={() => {
+          setIsAuthOpen(false);
+          setPendingCheckoutAfterLogin(false);
+        }}
         onAuthSuccess={handleAuthSuccess}
       />
 
