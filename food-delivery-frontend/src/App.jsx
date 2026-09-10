@@ -3,8 +3,16 @@ import Navbar from './components/Navbar';
 import RestaurantCard from './components/RestaurantCard';
 import MenuModal from './components/MenuModal';
 import AuthModal from './components/AuthModal';
-import { getRestaurants } from './api';
-import { Flame, Star, Zap, Leaf, CheckCircle } from 'lucide-react';
+import CartDrawer from './components/CartDrawer';
+import { 
+  getRestaurants, 
+  getCart, 
+  addToCart, 
+  updateCartItem, 
+  clearCart, 
+  mergeCart 
+} from './api';
+import { Flame, Star, Zap, Leaf, CheckCircle, AlertTriangle } from 'lucide-react';
 
 export default function App() {
   const [selectedCity, setSelectedCity] = useState('Noida');
@@ -14,7 +22,11 @@ export default function App() {
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
-  const [cart, setCart] = useState([]);
+  
+  // Redis-Backed Cart State
+  const [cart, setCart] = useState(null);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [conflictModal, setConflictModal] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
   // Authentication State
@@ -28,7 +40,14 @@ export default function App() {
   });
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
-  // Fetch restaurants whenever selectedCity changes
+  // 1. Fetch active Cart from Redis on initial load
+  useEffect(() => {
+    getCart()
+      .then((data) => setCart(data))
+      .catch((err) => console.error('Failed to load Redis cart:', err));
+  }, []);
+
+  // 2. Fetch restaurants whenever selectedCity changes
   useEffect(() => {
     setLoading(true);
     setError(null);
@@ -44,11 +63,6 @@ export default function App() {
       });
   }, [selectedCity]);
 
-  const handleAddToCart = (item) => {
-    setCart((prev) => [...prev, item]);
-    showToast(`Added "${item.name}" (₹${Math.round(item.price)}) to cart!`);
-  };
-
   const showToast = (msg) => {
     setToastMessage(msg);
     setTimeout(() => {
@@ -56,11 +70,82 @@ export default function App() {
     }, 2500);
   };
 
-  const handleAuthSuccess = (data) => {
+  // Cart Operations via Redis Backend
+  const handleAddToCart = async (item, restaurant) => {
+    const restaurantId = restaurant ? restaurant.id : item.restaurantId;
+    try {
+      const updatedCart = await addToCart(restaurantId, item.id, 1, false);
+      setCart(updatedCart);
+      showToast(`Added "${item.name}" (₹${Math.round(item.price)}) to cart!`);
+    } catch (err) {
+      if (err.response && err.response.status === 409) {
+        // Single-restaurant rule conflict
+        const conflictData = err.response.data?.data;
+        setConflictModal({
+          currentRestaurantName: conflictData?.currentRestaurantName || 'another restaurant',
+          item,
+          restaurantId,
+        });
+      } else {
+        console.error('Failed to add item to cart:', err);
+        showToast('Error adding item to cart. Please try again.');
+      }
+    }
+  };
+
+  const handleConfirmReplaceCart = async () => {
+    if (!conflictModal) return;
+    try {
+      const updatedCart = await addToCart(
+        conflictModal.restaurantId, 
+        conflictModal.item.id, 
+        1, 
+        true
+      );
+      setCart(updatedCart);
+      showToast(`Cart refreshed with "${conflictModal.item.name}"!`);
+      setConflictModal(null);
+    } catch (err) {
+      console.error('Failed to replace cart:', err);
+      showToast('Could not replace cart items.');
+      setConflictModal(null);
+    }
+  };
+
+  const handleUpdateQuantity = async (menuItemId, delta) => {
+    try {
+      const updatedCart = await updateCartItem(menuItemId, delta);
+      setCart(updatedCart);
+    } catch (err) {
+      console.error('Failed to update item quantity:', err);
+      showToast('Could not update item quantity.');
+    }
+  };
+
+  const handleClearCart = async () => {
+    try {
+      await clearCart();
+      setCart(null);
+      showToast('Cart cleared successfully.');
+    } catch (err) {
+      console.error('Failed to clear cart:', err);
+      showToast('Error clearing cart.');
+    }
+  };
+
+  const handleAuthSuccess = async (data) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
     setUser(data);
     showToast(`Welcome, ${data.fullName.split(' ')[0]}!`);
+
+    // Merge guest cart items into authenticated customer Redis cart
+    try {
+      const merged = await mergeCart();
+      if (merged) setCart(merged);
+    } catch (e) {
+      console.error('Failed to merge guest cart on login:', e);
+    }
   };
 
   const handleLogout = () => {
@@ -68,6 +153,8 @@ export default function App() {
     localStorage.removeItem('user');
     setUser(null);
     showToast('Signed out successfully');
+    // Refresh cart for guest session
+    getCart().then(setCart).catch(console.error);
   };
 
   // Filter & Search Logic
@@ -85,16 +172,16 @@ export default function App() {
     return true;
   });
 
-  const cartTotal = cart.reduce((sum, item) => sum + Number(item.price), 0);
+  const cartCount = cart?.totalItemCount || 0;
 
   return (
     <div>
       <Navbar
         user={user}
-        cartCount={cart.length}
+        cartCount={cartCount}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onCartClick={() => showToast(`Cart has ${cart.length} item(s). Total: ₹${Math.round(cartTotal)}`)}
+        onCartClick={() => setIsCartOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
         selectedCity={selectedCity}
@@ -192,6 +279,53 @@ export default function App() {
           onClose={() => setSelectedRestaurant(null)}
           onAddToCart={handleAddToCart}
         />
+      )}
+
+      {/* Slide-out Cart Drawer */}
+      <CartDrawer
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cart={cart}
+        onUpdateQuantity={handleUpdateQuantity}
+        onClearCart={handleClearCart}
+        onCheckout={() => {
+          setIsCartOpen(false);
+          showToast('Checkout flow ready for Day 6!');
+        }}
+      />
+
+      {/* Single-Restaurant Conflict Modal */}
+      {conflictModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-gray-100 text-center animate-in fade-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 bg-amber-100 rounded-full flex items-center justify-center text-amber-600 mx-auto mb-4">
+              <AlertTriangle className="w-8 h-8" />
+            </div>
+            
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Replace cart items?
+            </h3>
+            
+            <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+              Your cart already contains items from <strong className="text-gray-800">{conflictModal.currentRestaurantName}</strong>. A cart can only have items from one restaurant at a time.
+            </p>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setConflictModal(null)}
+                className="flex-1 py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-semibold rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmReplaceCart}
+                className="flex-1 py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-orange-500/25 transition cursor-pointer"
+              >
+                Yes, Replace
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Auth Modal */}

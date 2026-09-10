@@ -27,7 +27,7 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
   });
 
   const handleAdd = (item) => {
-    onAddToCart(item);
+    onAddToCart(item, restaurant);
     setAddedItemIds((prev) => new Set(prev).add(item.id));
     setTimeout(() => {
       setAddedItemIds((prev) => {
