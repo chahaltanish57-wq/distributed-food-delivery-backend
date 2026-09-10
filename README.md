@@ -1,4 +1,4 @@
-# 🚚 Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
+# ðŸšš Distributed Food Delivery Backend (Swiggy / Zomato Architecture)
 
 [![Java 21](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3+-green.svg)](https://spring.io/projects/spring-boot)
@@ -11,38 +11,38 @@ An enterprise-grade, event-driven backend for a food delivery platform inspired 
 
 ---
 
-## 🗺️ System Architecture
+## ðŸ—ºï¸ System Architecture
 
 ```
 [Customer App]         [Restaurant Portal]         [Delivery Partner App]
-       │                       │                             │
-       └───────────────────────┼─────────────────────────────┘
-                               ▼
+       â”‚                       â”‚                             â”‚
+       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                               â–¼
                    [Spring Cloud API Gateway]
-                               │
-       ┌───────────────┬───────┴───────┬───────────────┐
-       ▼               ▼               ▼               ▼
+                               â”‚
+       â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+       â–¼               â–¼               â–¼               â–¼
 [Order Service] [Payment Service] [Delivery Svc] [Restaurant Svc]
   (State Machine) (Idempotency)   (Redis Geo)     (Catalog/Menu)
-       │               │               │               │
-       └───────────────┼───────────────┼───────────────┘
-                       ▼               ▼
+       â”‚               â”‚               â”‚               â”‚
+       â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                       â–¼               â–¼
             [Apache Kafka]     [Redis (Cache/Locks)]
-                   │
-                   ▼
-       [Notification Service]  ──▶  (WebSockets / STOMP)
-                   │
-                   ▼
-         [AI Service (Gemini)] ──▶  (Support Bot, ETA, Recommender)
+                   â”‚
+                   â–¼
+       [Notification Service]  â”€â”€â–¶  (WebSockets / STOMP)
+                   â”‚
+                   â–¼
+         [AI Service (Gemini)] â”€â”€â–¶  (Support Bot, ETA, Recommender)
 ```
 
 ---
 
-## 📅 14-Day Build Progress
+## ðŸ“… 14-Day Build Progress
 
 - [x] **Day 1: Infrastructure & Docker Compose (PostgreSQL, Redis, Kafka KRaft, Kafka UI)**
 - [x] **Day 2: Project Scaffolding & Database Schema (Flyway + PostgreSQL)**: Project Scaffolding & Database Schema (Flyway + PostgreSQL)
-- [ ] **Day 3**: Restaurant & Menu Service (CRUD + Swagger UI)
+- [x] **Day 3: Restaurant & Menu Service + Swiggy Web UI (React + Vite)**: Restaurant & Menu Service (CRUD + Swagger UI)
 - [ ] **Day 4**: Customer Accounts & Stateless JWT Security
 - [ ] **Day 5**: Shopping Cart Engine with Redis (TTL Caching)
 - [ ] **Day 6**: Order State Machine Engine
@@ -57,7 +57,7 @@ An enterprise-grade, event-driven backend for a food delivery platform inspired 
 
 ---
 
-## 🚀 Day 1: Local Infrastructure Quickstart
+## ðŸš€ Day 1: Local Infrastructure Quickstart
 
 ### Prerequisites
 * [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Running with WSL2 backend on Windows)
@@ -81,10 +81,11 @@ docker compose ps
 | **Redis 7** | `6379` | In-memory cache & geospatial store | `redis-cli` |
 | **Apache Kafka (KRaft)** | `9092` | Event bus for distributed sagas | N/A |
 | **Kafka UI** | `8085` | Web dashboard to monitor topics & messages | [http://localhost:8085](http://localhost:8085) |
+| **Web Frontend (React)** | \5173\ | Swiggy Customer Portal | [http://localhost:5173](http://localhost:5173) |
 
 ---
 
-## 🛠️ Tech Stack & Key Design Patterns
+## ðŸ› ï¸ Tech Stack & Key Design Patterns
 * **Language & Framework**: Java 21 LTS, Spring Boot 3.3+
 * **Distributed Messaging**: Apache Kafka with KRaft (Zookeeper-less)
 * **High-Speed Cache & Geo**: Redis (Geospatial indexing via `GEOADD`/`GEOSEARCH`, Redisson Distributed Locks)
