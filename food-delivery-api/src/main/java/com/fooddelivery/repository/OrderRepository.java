@@ -20,6 +20,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     List<Order> findByStatus(OrderStatus status);
 
+    List<Order> findByStatusAndCreatedAtBefore(OrderStatus status, java.time.Instant timestamp);
+
+    @EntityGraph(attributePaths = {"customer", "orderItems"})
+    List<Order> findByRestaurantIdAndStatusInOrderByCreatedAtDesc(Long restaurantId, java.util.Collection<OrderStatus> statuses);
+
     @EntityGraph(attributePaths = {"customer", "restaurant", "orderItems"})
     Optional<Order> findWithDetailsById(Long id);
 }

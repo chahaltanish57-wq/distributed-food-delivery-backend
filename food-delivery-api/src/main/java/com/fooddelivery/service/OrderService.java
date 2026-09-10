@@ -156,7 +156,7 @@ public class OrderService {
         return toDTO(updated, updated.getCustomer().getPhone());
     }
 
-    private OrderDTO toDTO(Order order, String contactPhone) {
+    public OrderDTO toDTO(Order order, String contactPhone) {
         int deliveryTime = order.getRestaurant() != null && order.getRestaurant().getDeliveryTimeMins() != null
                 ? order.getRestaurant().getDeliveryTimeMins()
                 : 25;

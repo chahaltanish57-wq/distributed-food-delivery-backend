@@ -123,3 +123,29 @@ export const getPaymentReceipt = async (orderId) => {
   const response = await apiClient.get(`/payments/order/${orderId}`);
   return response.data.data;
 };
+
+// Day 9: Kitchen Live Dashboard APIs
+export const getKitchenOrders = async (restaurantId) => {
+  const response = await apiClient.get(`/kitchen/restaurants/${restaurantId}/orders`);
+  return response.data.data;
+};
+
+export const acceptKitchenOrder = async (orderId) => {
+  const response = await apiClient.patch(`/kitchen/orders/${orderId}/accept`);
+  return response.data.data;
+};
+
+export const startCookingOrder = async (orderId) => {
+  const response = await apiClient.patch(`/kitchen/orders/${orderId}/start-cooking`);
+  return response.data.data;
+};
+
+export const markFoodReady = async (orderId) => {
+  const response = await apiClient.patch(`/kitchen/orders/${orderId}/food-ready`);
+  return response.data.data;
+};
+
+export const rejectKitchenOrder = async (orderId, reason = 'Kitchen is overwhelmed') => {
+  const response = await apiClient.patch(`/kitchen/orders/${orderId}/reject`, { reason });
+  return response.data.data;
+};

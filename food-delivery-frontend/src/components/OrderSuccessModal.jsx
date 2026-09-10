@@ -6,7 +6,8 @@ import {
   ShoppingBag, 
   Bike, 
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  ChefHat
 } from 'lucide-react';
 
 export default function OrderSuccessModal({
@@ -14,6 +15,7 @@ export default function OrderSuccessModal({
   onClose,
   order,
   payment,
+  onOpenKitchen
 }) {
   if (!isOpen || !order) return null;
 
@@ -189,15 +191,44 @@ export default function OrderSuccessModal({
           </div>
         </div>
 
-        {/* Close / Done Button */}
-        <button
-          onClick={onClose}
-          className="cart-checkout-btn"
-          style={{ justifyContent: 'center', gap: '0.5rem' }}
-        >
-          <span>Back to Restaurants</span>
-          <ArrowRight size={18} />
-        </button>
+        {/* Buttons */}
+        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+          {onOpenKitchen && (
+            <button
+              onClick={() => {
+                onClose();
+                onOpenKitchen();
+              }}
+              style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.45rem',
+                padding: '0.85rem 1rem',
+                borderRadius: 14,
+                border: '1px solid #fc8019',
+                background: '#fff9db',
+                color: '#d9480f',
+                fontWeight: 800,
+                fontSize: '0.88rem',
+                cursor: 'pointer'
+              }}
+            >
+              <ChefHat size={18} color="#fc8019" />
+              <span>Watch in Kitchen KDS</span>
+            </button>
+          )}
+
+          <button
+            onClick={onClose}
+            className="cart-checkout-btn"
+            style={{ flex: 1, justifyContent: 'center', gap: '0.5rem', marginTop: 0 }}
+          >
+            <span>Storefront</span>
+            <ArrowRight size={18} />
+          </button>
+        </div>
       </div>
     </div>
   );

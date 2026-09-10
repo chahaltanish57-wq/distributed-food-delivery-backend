@@ -7,6 +7,7 @@ import CartDrawer from './components/CartDrawer';
 import CheckoutModal from './components/CheckoutModal';
 import PaymentModal from './components/PaymentModal';
 import OrderSuccessModal from './components/OrderSuccessModal';
+import KitchenDashboard from './components/KitchenDashboard';
 import { 
   getRestaurants, 
   getCart, 
@@ -40,6 +41,29 @@ export default function App() {
   const [completedPayment, setCompletedPayment] = useState(null);
   const [successOrder, setSuccessOrder] = useState(null);
   const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
+
+  // Day 9: Kitchen Display System (KDS) View Mode
+  const [viewMode, setViewMode] = useState(() => {
+    return window.location.hash === '#restaurant' ? 'KITCHEN' : 'CUSTOMER';
+  });
+
+  useEffect(() => {
+    const handleHash = () => {
+      if (window.location.hash === '#restaurant') {
+        setViewMode('KITCHEN');
+      } else {
+        setViewMode('CUSTOMER');
+      }
+    };
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  const handleToggleViewMode = () => {
+    const next = viewMode === 'CUSTOMER' ? 'KITCHEN' : 'CUSTOMER';
+    setViewMode(next);
+    window.location.hash = next === 'KITCHEN' ? 'restaurant' : '';
+  };
 
   // Authentication State
   const [user, setUser] = useState(() => {
@@ -238,9 +262,19 @@ export default function App() {
         onLogout={handleLogout}
         selectedCity={selectedCity}
         onSelectCity={setSelectedCity}
+        viewMode={viewMode}
+        onToggleViewMode={handleToggleViewMode}
       />
 
-      <main className="container">
+      {/* Day 9: Kitchen Display System (KDS) View */}
+      {viewMode === 'KITCHEN' ? (
+        <KitchenDashboard
+          restaurants={restaurants}
+          onBackToStorefront={handleToggleViewMode}
+          showToast={showToast}
+        />
+      ) : (
+        <main className="container">
         {/* Swiggy Hero Banner */}
         <div className="hero-banner">
           <div>
@@ -323,6 +357,7 @@ export default function App() {
           </div>
         )}
       </main>
+      )}
 
       {/* Menu Modal with Inline Quantity Controls */}
       {selectedRestaurant && (
@@ -372,6 +407,10 @@ export default function App() {
         }}
         order={successOrder}
         payment={completedPayment}
+        onOpenKitchen={() => {
+          setViewMode('KITCHEN');
+          window.location.hash = 'restaurant';
+        }}
       />
 
       {/* Single-Restaurant Conflict Modal */}

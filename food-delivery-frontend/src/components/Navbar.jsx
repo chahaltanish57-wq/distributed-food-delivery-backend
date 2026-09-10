@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown } from 'lucide-react';
+import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat } from 'lucide-react';
 
 export default function Navbar({
   user,
@@ -10,7 +10,9 @@ export default function Navbar({
   onOpenAuth,
   onLogout,
   selectedCity,
-  onSelectCity
+  onSelectCity,
+  viewMode,
+  onToggleViewMode
 }) {
   const [showCityMenu, setShowCityMenu] = useState(false);
 
@@ -177,12 +179,24 @@ export default function Navbar({
           </button>
         )}
 
-        {/* Cart Section */}
-        <button className="cart-btn" onClick={onCartClick}>
-          <ShoppingBag size={18} />
-          <span>Cart</span>
-          {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+        {/* Day 9: Kitchen Portal Switcher */}
+        <button 
+          className={`kds-nav-toggle-btn ${viewMode === 'KITCHEN' ? 'active' : ''}`}
+          onClick={onToggleViewMode}
+          title={viewMode === 'KITCHEN' ? 'Switch back to Customer Storefront' : 'Open Restaurant Kitchen Display System'}
+        >
+          <ChefHat size={18} />
+          <span>{viewMode === 'KITCHEN' ? 'Customer View' : 'Kitchen KDS'}</span>
         </button>
+
+        {/* Cart Section */}
+        {viewMode !== 'KITCHEN' && (
+          <button className="cart-btn" onClick={onCartClick}>
+            <ShoppingBag size={18} />
+            <span>Cart</span>
+            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          </button>
+        )}
       </div>
     </header>
   );
