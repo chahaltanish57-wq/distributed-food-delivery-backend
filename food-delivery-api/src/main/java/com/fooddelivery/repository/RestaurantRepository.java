@@ -10,5 +10,6 @@ import java.util.Optional;
 @Repository
 public interface RestaurantRepository extends JpaRepository<Restaurant, Long> {
     List<Restaurant> findAllByIsActiveTrue();
+    List<Restaurant> findAllByCityIgnoreCaseAndIsActiveTrue(String city);
     Optional<Restaurant> findByIdAndIsActiveTrue(Long id);
 }

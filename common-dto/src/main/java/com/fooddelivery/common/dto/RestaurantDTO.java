@@ -17,6 +17,7 @@ public class RestaurantDTO {
     private String name;
     private String description;
     private String address;
+    private String city;
     private BigDecimal latitude;
     private BigDecimal longitude;
     private BigDecimal rating;

@@ -7,6 +7,7 @@ import { getRestaurants } from './api';
 import { Flame, Star, Zap, Leaf, CheckCircle } from 'lucide-react';
 
 export default function App() {
+  const [selectedCity, setSelectedCity] = useState('Noida');
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,22 +28,25 @@ export default function App() {
   });
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
+  // Fetch restaurants whenever selectedCity changes
   useEffect(() => {
-    getRestaurants()
+    setLoading(true);
+    setError(null);
+    getRestaurants(selectedCity)
       .then((data) => {
         setRestaurants(data || []);
         setLoading(false);
       })
       .catch((err) => {
         console.error('Failed to fetch restaurants:', err);
-        setError('Could not connect to Spring Boot backend. Ensure backend is running on port 8080.');
+        setError('Could not connect to Spring Boot backend on port 8080.');
         setLoading(false);
       });
-  }, []);
+  }, [selectedCity]);
 
   const handleAddToCart = (item) => {
     setCart((prev) => [...prev, item]);
-    showToast(`Added "${item.name}" to cart!`);
+    showToast(`Added "${item.name}" (₹${Math.round(item.price)}) to cart!`);
   };
 
   const showToast = (msg) => {
@@ -75,11 +79,13 @@ export default function App() {
     if (!matchesSearch) return false;
 
     if (filterType === 'RATING_45') return Number(r.rating) >= 4.7;
-    if (filterType === 'FAST') return Number(r.deliveryTimeMins) <= 25;
-    if (filterType === 'VEG') return r.cuisineType.toLowerCase().includes('healthy') || r.cuisineType.toLowerCase().includes('vegan');
+    if (filterType === 'FAST') return Number(r.deliveryTimeMins) <= 22;
+    if (filterType === 'VEG') return r.cuisineType.toLowerCase().includes('healthy') || r.cuisineType.toLowerCase().includes('chaat') || r.cuisineType.toLowerCase().includes('sweets');
 
     return true;
   });
+
+  const cartTotal = cart.reduce((sum, item) => sum + Number(item.price), 0);
 
   return (
     <div>
@@ -88,9 +94,11 @@ export default function App() {
         cartCount={cart.length}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
-        onCartClick={() => showToast(`Cart has ${cart.length} item(s). Total: $${cart.reduce((sum, item) => sum + Number(item.price), 0).toFixed(2)}`)}
+        onCartClick={() => showToast(`Cart has ${cart.length} item(s). Total: ₹${Math.round(cartTotal)}`)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onLogout={handleLogout}
+        selectedCity={selectedCity}
+        onSelectCity={setSelectedCity}
       />
 
       <main className="container">
@@ -98,15 +106,15 @@ export default function App() {
         <div className="hero-banner">
           <div>
             <h1 className="hero-title">
-              {user ? `Welcome back, ${user.fullName.split(' ')[0]}!` : 'Hungry? Order from Top Kitchens'}
+              {user ? `Welcome back, ${user.fullName.split(' ')[0]}!` : `Craving food in ${selectedCity}?`}
             </h1>
             <p className="hero-subtitle">
-              Live event-driven food delivery backend powered by Spring Boot, Redis & Kafka.
+              Delivering authentic food across {selectedCity === 'Noida' ? 'Noida (Sector 18, 29, 62)' : 'Dehradun (Rajpur Road, Clock Tower)'} powered by Spring Boot, Redis & Kafka.
             </p>
           </div>
           <div style={{ background: 'rgba(255,255,255,0.2)', padding: '0.75rem 1.25rem', borderRadius: 16, textAlign: 'center' }}>
-            <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>⚡ 20m</span>
-            <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>Avg Delivery</p>
+            <span style={{ fontSize: '1.75rem', fontWeight: 800 }}>⚡ 22m</span>
+            <p style={{ fontSize: '0.8rem', opacity: 0.9 }}>Avg Delivery in {selectedCity}</p>
           </div>
         </div>
 
@@ -117,7 +125,7 @@ export default function App() {
             onClick={() => setFilterType('ALL')}
           >
             <Flame size={16} color="#fc8019" />
-            <span>All Restaurants</span>
+            <span>All {selectedCity} Kitchens</span>
           </button>
 
           <button
@@ -133,7 +141,7 @@ export default function App() {
             onClick={() => setFilterType('FAST')}
           >
             <Zap size={16} color="#0077b6" />
-            <span>Fast Delivery (≤ 25 mins)</span>
+            <span>Fast Delivery (≤ 22 mins)</span>
           </button>
 
           <button
@@ -141,19 +149,19 @@ export default function App() {
             onClick={() => setFilterType('VEG')}
           >
             <Leaf size={16} color="#0f8a65" />
-            <span>Healthy & Pure Veg</span>
+            <span>Pure Veg & Sweets</span>
           </button>
         </div>
 
         {/* Section Title */}
         <h2 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '1.25rem' }}>
-          {filteredRestaurants.length} Restaurants Available Near You
+          {filteredRestaurants.length} Restaurants Available in {selectedCity}
         </h2>
 
         {/* Loading / Error States */}
         {loading && (
           <div style={{ textAlign: 'center', padding: '4rem 0', color: '#868e96' }}>
-            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Connecting to Spring Boot Backend...</p>
+            <p style={{ fontSize: '1.1rem', fontWeight: 600 }}>Loading restaurants in {selectedCity}...</p>
           </div>
         )}
 

@@ -30,6 +30,10 @@ public class Restaurant {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String address;
 
+    @Builder.Default
+    @Column(length = 50)
+    private String city = "Noida";
+
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal latitude;
 
@@ -42,7 +46,7 @@ public class Restaurant {
 
     @Builder.Default
     @Column(precision = 2, scale = 1)
-    private BigDecimal rating = new BigDecimal("4.0");
+    private BigDecimal rating = new BigDecimal("4.5");
 
     @Column(name = "image_url", length = 500)
     private String imageUrl;

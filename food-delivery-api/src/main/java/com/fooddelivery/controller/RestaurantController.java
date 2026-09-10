@@ -22,9 +22,10 @@ public class RestaurantController {
     private final RestaurantService restaurantService;
 
     @GetMapping
-    @Operation(summary = "Get all active restaurants", description = "Returns a list of all operating restaurants with ratings and cuisine tags.")
-    public ResponseEntity<ApiResponse<List<RestaurantDTO>>> getAllRestaurants() {
-        List<RestaurantDTO> restaurants = restaurantService.getAllActiveRestaurants();
+    @Operation(summary = "Get all active restaurants", description = "Returns a list of all operating restaurants, optionally filtered by city (Noida or Dehradun).")
+    public ResponseEntity<ApiResponse<List<RestaurantDTO>>> getAllRestaurants(
+            @RequestParam(name = "city", required = false) String city) {
+        List<RestaurantDTO> restaurants = restaurantService.getAllActiveRestaurants(city);
         return ResponseEntity.ok(ApiResponse.success(restaurants, "Restaurants fetched successfully"));
     }
 

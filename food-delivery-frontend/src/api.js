@@ -18,8 +18,9 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-export const getRestaurants = async () => {
-  const response = await apiClient.get('/restaurants');
+export const getRestaurants = async (city) => {
+  const params = city ? { city } : {};
+  const response = await apiClient.get('/restaurants', { params });
   return response.data.data;
 };
 

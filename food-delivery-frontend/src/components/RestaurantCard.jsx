@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Clock } from 'lucide-react';
+import { Star, Clock, MapPin } from 'lucide-react';
 
 export default function RestaurantCard({ restaurant, onClick }) {
   return (
@@ -11,7 +11,7 @@ export default function RestaurantCard({ restaurant, onClick }) {
           className="card-img"
           loading="lazy"
         />
-        <div className="card-badge">50% OFF UP TO $10</div>
+        <div className="card-badge">FLAT ₹120 OFF ABOVE ₹299</div>
       </div>
 
       <div className="card-content">
@@ -26,6 +26,9 @@ export default function RestaurantCard({ restaurant, onClick }) {
             <Clock size={14} />
             <span>{restaurant.deliveryTimeMins} mins</span>
           </div>
+          <span style={{ fontSize: '0.78rem', background: '#e9ecef', color: '#495057', padding: '0.15rem 0.5rem', borderRadius: '6px', fontWeight: 700 }}>
+            {restaurant.city}
+          </span>
         </div>
 
         <p className="card-cuisine">{restaurant.cuisineType}</p>

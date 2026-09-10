@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, Star, Clock, Plus, Check } from 'lucide-react';
+import { X, Star, Clock, Check } from 'lucide-react';
 import { getRestaurantMenu } from '../api';
 
 export default function MenuModal({ restaurant, onClose, onAddToCart }) {
@@ -47,7 +47,7 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
               {restaurant.name}
             </h2>
             <p style={{ color: '#686b78', fontSize: '0.88rem', marginBottom: '0.5rem' }}>
-              {restaurant.cuisineType} • {restaurant.address}
+              {restaurant.cuisineType} • {restaurant.city} ({restaurant.address})
             </p>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
               <span className="rating-badge">
@@ -90,7 +90,9 @@ export default function MenuModal({ restaurant, onClose, onAddToCart }) {
                   <div className="menu-item-info">
                     <span className={item.isVegetarian ? 'veg-icon' : 'nonveg-icon'} />
                     <h4 className="item-name">{item.name}</h4>
-                    <p className="item-price">${Number(item.price).toFixed(2)}</p>
+                    <p className="item-price" style={{ color: '#fc8019', fontWeight: 800 }}>
+                      ₹{Math.round(item.price)}
+                    </p>
                     <p className="item-desc">{item.description}</p>
                   </div>
 

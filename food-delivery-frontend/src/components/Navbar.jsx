@@ -1,5 +1,5 @@
-import React from 'react';
-import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown } from 'lucide-react';
 
 export default function Navbar({
   user,
@@ -8,8 +8,17 @@ export default function Navbar({
   onSearchChange,
   onCartClick,
   onOpenAuth,
-  onLogout
+  onLogout,
+  selectedCity,
+  onSelectCity
 }) {
+  const [showCityMenu, setShowCityMenu] = useState(false);
+
+  const cities = [
+    { name: 'Noida', area: 'Sector 18 Market' },
+    { name: 'Dehradun', area: 'Rajpur Road' }
+  ];
+
   return (
     <header className="navbar">
       <div className="nav-left">
@@ -18,9 +27,68 @@ export default function Navbar({
           <span>Swiggy Distributed</span>
         </div>
 
-        <div className="location-pill">
-          <MapPin size={16} color="#fc8019" />
-          <span><strong>Bangalore</strong>, Indiranagar</span>
+        {/* City Selector Pill */}
+        <div style={{ position: 'relative' }}>
+          <div
+            className="location-pill"
+            onClick={() => setShowCityMenu(!showCityMenu)}
+            style={{ border: '1px solid #ced4da', background: '#ffffff', cursor: 'pointer' }}
+          >
+            <MapPin size={16} color="#fc8019" />
+            <span><strong>{selectedCity}</strong>, {selectedCity === 'Noida' ? 'Sector 18' : 'Rajpur Road'}</span>
+            <ChevronDown size={14} color="#868e96" />
+          </div>
+
+          {showCityMenu && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '120%',
+                left: 0,
+                background: '#ffffff',
+                borderRadius: '12px',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+                border: '1px solid #e9ecef',
+                width: '230px',
+                zIndex: 200,
+                padding: '0.5rem 0',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{ padding: '0.4rem 1rem', fontSize: '0.75rem', fontWeight: 800, color: '#868e96', textTransform: 'uppercase' }}>
+                Select Delivery City
+              </div>
+              {cities.map((c) => (
+                <div
+                  key={c.name}
+                  onClick={() => {
+                    onSelectCity(c.name);
+                    setShowCityMenu(false);
+                  }}
+                  style={{
+                    padding: '0.65rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    cursor: 'pointer',
+                    background: selectedCity === c.name ? '#fff3e8' : 'transparent',
+                    borderLeft: selectedCity === c.name ? '4px solid #fc8019' : '4px solid transparent',
+                    transition: 'background 0.15s'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedCity !== c.name) e.currentTarget.style.background = '#f8f9fa';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (selectedCity !== c.name) e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <span style={{ fontWeight: 700, fontSize: '0.92rem', color: selectedCity === c.name ? '#fc8019' : '#212529' }}>
+                    {c.name}
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: '#6c757d' }}>{c.area}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -28,7 +96,7 @@ export default function Navbar({
         <Search size={18} className="search-icon" />
         <input
           type="text"
-          placeholder="Search for restaurants or dishes..."
+          placeholder={`Search in ${selectedCity} restaurants or dishes...`}
           className="search-input"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}

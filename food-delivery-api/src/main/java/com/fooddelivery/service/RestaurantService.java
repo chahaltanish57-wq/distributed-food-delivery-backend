@@ -21,11 +21,14 @@ public class RestaurantService {
     private final MenuItemRepository menuItemRepository;
 
     @Transactional(readOnly = true)
-    public List<RestaurantDTO> getAllActiveRestaurants() {
-        return restaurantRepository.findAllByIsActiveTrue()
-                .stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+    public List<RestaurantDTO> getAllActiveRestaurants(String city) {
+        List<Restaurant> restaurants;
+        if (city != null && !city.isBlank()) {
+            restaurants = restaurantRepository.findAllByCityIgnoreCaseAndIsActiveTrue(city.trim());
+        } else {
+            restaurants = restaurantRepository.findAllByIsActiveTrue();
+        }
+        return restaurants.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -54,9 +57,10 @@ public class RestaurantService {
                 .name(dto.getName())
                 .description(dto.getDescription())
                 .address(dto.getAddress())
+                .city(dto.getCity() != null ? dto.getCity() : "Noida")
                 .latitude(dto.getLatitude())
                 .longitude(dto.getLongitude())
-                .rating(dto.getRating() != null ? dto.getRating() : new java.math.BigDecimal("4.0"))
+                .rating(dto.getRating() != null ? dto.getRating() : new java.math.BigDecimal("4.5"))
                 .imageUrl(dto.getImageUrl())
                 .cuisineType(dto.getCuisineType())
                 .deliveryTimeMins(dto.getDeliveryTimeMins() != null ? dto.getDeliveryTimeMins() : 30)
@@ -92,6 +96,7 @@ public class RestaurantService {
                 .name(r.getName())
                 .description(r.getDescription())
                 .address(r.getAddress())
+                .city(r.getCity())
                 .latitude(r.getLatitude())
                 .longitude(r.getLongitude())
                 .rating(r.getRating())
