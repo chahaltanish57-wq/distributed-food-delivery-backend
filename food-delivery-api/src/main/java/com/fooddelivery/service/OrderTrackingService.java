@@ -100,8 +100,20 @@ public class OrderTrackingService {
 
         BigDecimal custLatBD = order.getDeliveryLatitude();
         BigDecimal custLngBD = order.getDeliveryLongitude();
-        double cLat = custLatBD != null ? custLatBD.doubleValue() : defaultCustomerLat(order.getRestaurant() != null ? order.getRestaurant().getCity() : "Noida");
-        double cLng = custLngBD != null ? custLngBD.doubleValue() : defaultCustomerLng(order.getRestaurant() != null ? order.getRestaurant().getCity() : "Noida");
+        String city = order.getRestaurant() != null ? order.getRestaurant().getCity() : "Noida";
+        double cLat = custLatBD != null ? custLatBD.doubleValue() : defaultCustomerLat(city);
+        double cLng = custLngBD != null ? custLngBD.doubleValue() : defaultCustomerLng(city);
+
+        // Ensure customer delivery location is separated from restaurant location
+        if (Math.abs(cLat - rLat) < 0.002 && Math.abs(cLng - rLng) < 0.002) {
+            if ("Dehradun".equalsIgnoreCase(city)) {
+                cLat = Math.abs(rLat - 30.3244) < 0.01 ? 30.3421 : 30.3244;
+                cLng = Math.abs(rLng - 78.0418) < 0.01 ? 78.0583 : 78.0418;
+            } else {
+                cLat = Math.abs(rLat - 28.5672) < 0.005 ? 28.5708 : 28.5672;
+                cLng = Math.abs(rLng - 77.3342) < 0.005 ? 77.3219 : 77.3342;
+            }
+        }
 
         // Linear interpolation with a small realistic sinusoidal road curvature
         double clampedRatio = Math.max(0.0, Math.min(1.0, progressRatio));
@@ -186,6 +198,18 @@ public class OrderTrackingService {
 
         BigDecimal custLat = order.getDeliveryLatitude() != null ? order.getDeliveryLatitude() : BigDecimal.valueOf(defaultCustomerLat(city));
         BigDecimal custLng = order.getDeliveryLongitude() != null ? order.getDeliveryLongitude() : BigDecimal.valueOf(defaultCustomerLng(city));
+
+        // Ensure customer delivery location is separated from restaurant location
+        if (Math.abs(custLat.doubleValue() - restLat.doubleValue()) < 0.002 &&
+            Math.abs(custLng.doubleValue() - restLng.doubleValue()) < 0.002) {
+            if ("Dehradun".equalsIgnoreCase(city)) {
+                custLat = BigDecimal.valueOf(Math.abs(restLat.doubleValue() - 30.3244) < 0.01 ? 30.3421000 : 30.3244000);
+                custLng = BigDecimal.valueOf(Math.abs(restLng.doubleValue() - 78.0418) < 0.01 ? 78.0583000 : 78.0418000);
+            } else {
+                custLat = BigDecimal.valueOf(Math.abs(restLat.doubleValue() - 28.5672) < 0.005 ? 28.5708000 : 28.5672000);
+                custLng = BigDecimal.valueOf(Math.abs(restLng.doubleValue() - 77.3342) < 0.005 ? 77.3219000 : 77.3342000);
+            }
+        }
 
         // Determine current coordinates
         BigDecimal currLat = overrideLat;

@@ -134,41 +134,59 @@ export default function LeafletMapView({
   // Fixed static landmarks for the order (DO NOT depend on driver live coordinates!)
   const coordinates = useMemo(() => {
     if (isDehradun) {
+      const restLat = trackingData?.restaurantLatitude ? parseFloat(trackingData.restaurantLatitude) : 30.3244;
+      const restLng = trackingData?.restaurantLongitude ? parseFloat(trackingData.restaurantLongitude) : 78.0418;
+      let custLat = trackingData?.deliveryLatitude ? parseFloat(trackingData.deliveryLatitude) : 30.3421;
+      let custLng = trackingData?.deliveryLongitude ? parseFloat(trackingData.deliveryLongitude) : 78.0583;
+
+      // Ensure customer dropoff is separated from restaurant location
+      if (Math.hypot(custLat - restLat, custLng - restLng) < 0.003) {
+        custLat = (Math.abs(restLat - 30.3244) < 0.01) ? 30.3421 : 30.3244;
+        custLng = (Math.abs(restLng - 78.0418) < 0.01) ? 78.0583 : 78.0418;
+      }
+
       return {
-        restaurant: [
-          trackingData?.restaurantLatitude ? parseFloat(trackingData.restaurantLatitude) : 30.3244,
-          trackingData?.restaurantLongitude ? parseFloat(trackingData.restaurantLongitude) : 78.0418
-        ], // Paltan Bazaar, Dehradun
-        customer: [
-          trackingData?.deliveryLatitude ? parseFloat(trackingData.deliveryLatitude) : 30.3421,
-          trackingData?.deliveryLongitude ? parseFloat(trackingData.deliveryLongitude) : 78.0583
-        ], // Rajpur Road, Dehradun
+        restaurant: [restLat, restLng],
+        customer: [custLat, custLng],
         outpost: [30.3160, 78.0380] // Dehradun Outpost
       };
     } else {
+      const restLat = trackingData?.restaurantLatitude ? parseFloat(trackingData.restaurantLatitude) : 28.5672;
+      const restLng = trackingData?.restaurantLongitude ? parseFloat(trackingData.restaurantLongitude) : 77.3342;
+      let custLat = trackingData?.deliveryLatitude ? parseFloat(trackingData.deliveryLatitude) : 28.5708;
+      let custLng = trackingData?.deliveryLongitude ? parseFloat(trackingData.deliveryLongitude) : 77.3219;
+
+      // Ensure customer dropoff is separated from restaurant location
+      if (Math.hypot(custLat - restLat, custLng - restLng) < 0.003) {
+        custLat = (Math.abs(restLat - 28.5672) < 0.005) ? 28.5708 : 28.5672;
+        custLng = (Math.abs(restLng - 77.3342) < 0.005) ? 77.3219 : 77.3342;
+      }
+
       return {
-        restaurant: [
-          trackingData?.restaurantLatitude ? parseFloat(trackingData.restaurantLatitude) : 28.5672,
-          trackingData?.restaurantLongitude ? parseFloat(trackingData.restaurantLongitude) : 77.3342
-        ], // Sector 29 Brahmaputra Market, Noida
-        customer: [
-          trackingData?.deliveryLatitude ? parseFloat(trackingData.deliveryLatitude) : 28.5708,
-          trackingData?.deliveryLongitude ? parseFloat(trackingData.deliveryLongitude) : 77.3219
-        ], // Sector 18 / Wave Mall, Noida
+        restaurant: [restLat, restLng],
+        customer: [custLat, custLng],
         outpost: [28.5605, 77.3342] // Sector 29 South Feeder Outpost
       };
     }
-  }, [isDehradun, restaurantId, orderId]);
+  }, [isDehradun, trackingData?.restaurantLatitude, trackingData?.restaurantLongitude, trackingData?.deliveryLatitude, trackingData?.deliveryLongitude, restaurantId, orderId]);
 
   // Initial road points from pre-baked corridors so lines render instantly
+  const getPrebakedDelivery = () => {
+    const defaultRoute = PREBAKED_ROUTES[cityKey].delivery;
+    if (Math.hypot(coordinates.restaurant[0] - defaultRoute[0][0], coordinates.restaurant[1] - defaultRoute[0][1]) > 0.005) {
+      return [...defaultRoute].reverse();
+    }
+    return defaultRoute;
+  };
+
   const [pickupRoutePoints, setPickupRoutePoints] = useState(() => PREBAKED_ROUTES[cityKey].pickup);
-  const [deliveryRoutePoints, setDeliveryRoutePoints] = useState(() => PREBAKED_ROUTES[cityKey].delivery);
+  const [deliveryRoutePoints, setDeliveryRoutePoints] = useState(getPrebakedDelivery);
 
   // 1. Fetch High-Accuracy OSRM Road Geometry (ONLY ONCE when city/order changes)
   useEffect(() => {
     let isMounted = true;
     setPickupRoutePoints(PREBAKED_ROUTES[cityKey].pickup);
-    setDeliveryRoutePoints(PREBAKED_ROUTES[cityKey].delivery);
+    setDeliveryRoutePoints(getPrebakedDelivery());
 
     async function fetchRoutes() {
       try {
@@ -176,18 +194,25 @@ export default function LeafletMapView({
         const pickupRes = await fetch(pickupUrl).then((r) => r.json());
         if (isMounted && pickupRes.routes && pickupRes.routes[0]?.geometry?.coordinates?.length > 1) {
           const pts = pickupRes.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-          setPickupRoutePoints(pts);
+          if (pts.length > 1 && Math.hypot(pts[pts.length - 1][0] - pts[0][0], pts[pts.length - 1][1] - pts[0][1]) > 0.001) {
+            setPickupRoutePoints(pts);
+          }
         }
       } catch (err) {
         // Fallback pre-baked routes already set
       }
 
       try {
-        const deliveryUrl = `https://router.project-osrm.org/route/v1/driving/${coordinates.restaurant[1]},${coordinates.restaurant[0]};${coordinates.customer[1]},${coordinates.customer[0]}?overview=full&geometries=geojson`;
-        const deliveryRes = await fetch(deliveryUrl).then((r) => r.json());
-        if (isMounted && deliveryRes.routes && deliveryRes.routes[0]?.geometry?.coordinates?.length > 1) {
-          const pts = deliveryRes.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-          setDeliveryRoutePoints(pts);
+        const dSpan = Math.hypot(coordinates.restaurant[0] - coordinates.customer[0], coordinates.restaurant[1] - coordinates.customer[1]);
+        if (dSpan > 0.002) {
+          const deliveryUrl = `https://router.project-osrm.org/route/v1/driving/${coordinates.restaurant[1]},${coordinates.restaurant[0]};${coordinates.customer[1]},${coordinates.customer[0]}?overview=full&geometries=geojson`;
+          const deliveryRes = await fetch(deliveryUrl).then((r) => r.json());
+          if (isMounted && deliveryRes.routes && deliveryRes.routes[0]?.geometry?.coordinates?.length > 1) {
+            const pts = deliveryRes.routes[0].geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+            if (pts.length > 1 && Math.hypot(pts[pts.length - 1][0] - pts[0][0], pts[pts.length - 1][1] - pts[0][1]) > 0.001) {
+              setDeliveryRoutePoints(pts);
+            }
+          }
         }
       } catch (err) {
         // Fallback pre-baked routes already set

@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,14 +63,45 @@ public class OrderService {
                     : restaurant.getAddress() + " (Nearby Area)";
         }
 
+        BigDecimal restLat = restaurant.getLatitude() != null ? restaurant.getLatitude() : new BigDecimal("28.5672000");
+        BigDecimal restLng = restaurant.getLongitude() != null ? restaurant.getLongitude() : new BigDecimal("77.3342000");
+
+        BigDecimal custLat = request.getDeliveryLatitude();
+        BigDecimal custLng = request.getDeliveryLongitude();
+
+        // If client did not provide coordinates or provided coordinates virtually on top of restaurant (< 200m),
+        // assign authentic distinct residential dropoff coordinates in the same city.
+        if (custLat == null || custLng == null ||
+                (Math.abs(custLat.doubleValue() - restLat.doubleValue()) < 0.002 &&
+                 Math.abs(custLng.doubleValue() - restLng.doubleValue()) < 0.002)) {
+
+            if ("Dehradun".equalsIgnoreCase(restaurant.getCity())) {
+                if (Math.abs(restLat.doubleValue() - 30.3244) < 0.01) {
+                    custLat = new BigDecimal("30.3421000"); // Rajpur Road
+                    custLng = new BigDecimal("78.0583000");
+                } else {
+                    custLat = new BigDecimal("30.3244000"); // Paltan Bazaar
+                    custLng = new BigDecimal("78.0418000");
+                }
+            } else {
+                if (Math.abs(restLat.doubleValue() - 28.5672) < 0.005) {
+                    custLat = new BigDecimal("28.5708000"); // Sector 18
+                    custLng = new BigDecimal("77.3219000");
+                } else {
+                    custLat = new BigDecimal("28.5672000"); // Sector 29
+                    custLng = new BigDecimal("77.3342000");
+                }
+            }
+        }
+
         Order order = Order.builder()
                 .customer(customer)
                 .restaurant(restaurant)
                 .status(OrderStatus.PAYMENT_PENDING)
                 .totalAmount(cart.getGrandTotal())
                 .deliveryAddress(deliveryAddress.trim())
-                .deliveryLatitude(request.getDeliveryLatitude() != null ? request.getDeliveryLatitude() : restaurant.getLatitude())
-                .deliveryLongitude(request.getDeliveryLongitude() != null ? request.getDeliveryLongitude() : restaurant.getLongitude())
+                .deliveryLatitude(custLat)
+                .deliveryLongitude(custLng)
                 .build();
 
         for (CartItemDTO cItem : cart.getItems()) {

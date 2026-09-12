@@ -24,13 +24,13 @@ export default function CheckoutModal({
   const city = cart.city || 'Noida';
 
   const defaultAddresses = city === 'Dehradun' ? [
-    { label: 'Home', address: 'Villa 8, Jakhan, Rajpur Road, Dehradun - 248001' },
-    { label: 'Work', address: 'Clock Tower Square, Paltan Bazaar, Dehradun - 248001' },
-    { label: 'Other', address: 'Foothills Cottage, Dakpatti, Dehradun - 248009' }
+    { label: 'Home', address: 'Villa 8, Jakhan, Rajpur Road, Dehradun - 248001', lat: 30.3421, lng: 78.0583 },
+    { label: 'Work', address: 'Clock Tower Square, Paltan Bazaar, Dehradun - 248001', lat: 30.3244, lng: 78.0418 },
+    { label: 'Other', address: 'Foothills Cottage, Dakpatti, Dehradun - 248009', lat: 30.3812, lng: 78.0891 }
   ] : [
-    { label: 'Home', address: 'Tower 4, Flat 302, Logix Cyber Park, Sector 62, Noida - 201309' },
-    { label: 'Work', address: 'Suite 12, Wave Silver Tower, Sector 18, Noida - 201301' },
-    { label: 'Other', address: 'House 24, Brahmaputra Complex, Sector 29, Noida - 201303' }
+    { label: 'Home', address: 'Tower 4, Flat 302, Logix Cyber Park, Sector 62, Noida - 201309', lat: 28.6280, lng: 77.3649 },
+    { label: 'Work', address: 'Suite 12, Wave Silver Tower, Sector 18, Noida - 201301', lat: 28.5708, lng: 77.3219 },
+    { label: 'Other', address: 'House 24, Brahmaputra Complex, Sector 29, Noida - 201303', lat: 28.5672, lng: 77.3342 }
   ];
 
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(0);
@@ -55,9 +55,20 @@ export default function CheckoutModal({
     setIsSubmitting(true);
     setError(null);
 
+    const activeAddr = defaultAddresses[selectedAddressIndex];
+    let lat = activeAddr?.lat;
+    let lng = activeAddr?.lng;
+
+    if (!lat || !lng) {
+      lat = city === 'Dehradun' ? 30.3421 : 28.5708;
+      lng = city === 'Dehradun' ? 78.0583 : 77.3219;
+    }
+
     try {
       await onConfirmOrder({
         deliveryAddress: customAddress.trim(),
+        deliveryLatitude: lat,
+        deliveryLongitude: lng,
         contactPhone: phone.trim(),
         specialInstructions: specialInstructions.trim(),
       });
