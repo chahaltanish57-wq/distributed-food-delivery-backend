@@ -89,6 +89,24 @@ export default function DriverDashboard({ onBackToStorefront, showToast }) {
     return () => clearInterval(interval);
   }, [selectedDriverId, refreshDriverData]);
 
+  const broadcastDriverEvent = (type, orderId, extra = {}) => {
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        const bc = new BroadcastChannel('swiggy_delivery_events');
+        bc.postMessage({ type, orderId, timestamp: Date.now(), ...extra });
+        setTimeout(() => bc.close(), 100);
+      }
+      localStorage.setItem('swiggy_last_driver_event', JSON.stringify({
+        type,
+        orderId,
+        timestamp: Date.now(),
+        ...extra
+      }));
+    } catch (e) {
+      console.warn('Driver event broadcast warning:', e);
+    }
+  };
+
   // 3. Claim Delivery Run with Redisson Distributed Lock
   const handleAcceptRun = async (orderId) => {
     if (!selectedDriverId || actionLoading) return;
@@ -98,6 +116,10 @@ export default function DriverDashboard({ onBackToStorefront, showToast }) {
       const mission = await acceptDeliveryRun(selectedDriverId, orderId);
       setActiveMission(mission);
       showToast && showToast(`Mission Claimed! Proceed to ${mission.restaurantName} for pickup.`);
+      broadcastDriverEvent('DRIVER_ACCEPTED_RUN', orderId, {
+        driverId: selectedDriverId,
+        driverName: currentDriver?.name || mission?.deliveryPartnerName || 'Rohan Sharma'
+      });
       await refreshDriverData(selectedDriverId);
     } catch (err) {
       console.error('Failed to claim order:', err);
@@ -118,6 +140,9 @@ export default function DriverDashboard({ onBackToStorefront, showToast }) {
       const updated = await pickupDeliveryOrder(selectedDriverId, orderId);
       setActiveMission(updated);
       showToast && showToast('Order Picked Up! Navigating to customer location.');
+      broadcastDriverEvent('DRIVER_COLLECTED_ORDER', orderId, {
+        driverId: selectedDriverId
+      });
       await refreshDriverData(selectedDriverId);
     } catch (err) {
       console.error('Failed to pickup order:', err);

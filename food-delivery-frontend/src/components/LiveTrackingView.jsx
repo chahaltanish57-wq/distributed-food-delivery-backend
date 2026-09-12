@@ -108,6 +108,35 @@ function calculateRoadNavigation(progressRatio) {
   return { x, y, heading, instruction, iconName, distToTurn, trailPath };
 }
 
+// Mathematical Trajectory for Driver Heading to Restaurant for Pickup
+function calculatePickupNavigation(pickupRatio) {
+  // South Feeder Road: Driver Outpost (140, 440) -> Restaurant Hub (140, 330)
+  // 110 units Northbound along x = 140
+  const clamped = Math.max(0.0, Math.min(1.0, pickupRatio));
+  const totalDistMeters = 350;
+  const x = 140;
+  const y = 440 - clamped * 110;
+  const heading = -90; // Northbound
+  const remainingDist = Math.max(0, Math.round((1.0 - clamped) * totalDistMeters));
+
+  let instruction = 'Driver Rohan heading North along South Feeder to Restaurant';
+  let iconName = 'ArrowUp';
+  let distToTurn = `${remainingDist}m`;
+
+  if (clamped >= 0.96) {
+    instruction = 'Driver arrived at Restaurant! Waiting for food packaging & collection';
+    iconName = 'Store';
+    distToTurn = 'At Restaurant';
+  } else if (clamped <= 0.05) {
+    instruction = 'Mission Dispatched: Driver is en route to restaurant for pickup';
+    iconName = 'ArrowUp';
+    distToTurn = '350m';
+  }
+
+  const trailPath = `M 140 440 L 140 ${y}`;
+  return { x, y, heading, instruction, iconName, distToTurn, trailPath };
+}
+
 export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpenDriver }) {
   const [trackingData, setTrackingData] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('CONNECTING');
@@ -115,6 +144,8 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
   const [error, setError] = useState(null);
   const [simulating, setSimulating] = useState(false);
   const [isLiveDriving, setIsLiveDriving] = useState(false);
+  const [pickupProgress, setPickupProgress] = useState(0.0);
+  const [isLivePickupDriving, setIsLivePickupDriving] = useState(false);
   const [driveSpeed, setDriveSpeed] = useState(1);
   const socketClientRef = useRef(null);
 
@@ -126,6 +157,18 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
       const data = await getOrderTracking(orderId);
       setTrackingData(data);
       setError(null);
+
+      // Auto-start live delivery if order is already out for delivery
+      if (data.orderStatus === 'OUT_FOR_DELIVERY' && (data.progressPercent || 0) < 95) {
+        setPickupProgress(1.0);
+        setIsLiveDriving(true);
+      } else if (data.orderStatus === 'DELIVERED') {
+        setPickupProgress(1.0);
+      } else if (data.driverName && ['RESTAURANT_ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'].includes(data.orderStatus)) {
+        // Auto-run pickup simulation if not completed
+        setPickupProgress(0.0);
+        setIsLivePickupDriving(true);
+      }
     } catch (err) {
       console.error('Failed to load tracking snapshot:', err);
       setError('Could not load order tracking details.');
@@ -138,15 +181,108 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     loadSnapshot();
   }, [loadSnapshot]);
 
-  // 2. Connect to STOMP WebSocket topic /topic/orders/{orderId}/tracking
+  // 2. Listen to cross-tab Driver Actions (Accept Run & Collect Order)
+  useEffect(() => {
+    let bc = null;
+    try {
+      if (typeof BroadcastChannel !== 'undefined') {
+        bc = new BroadcastChannel('swiggy_delivery_events');
+        bc.onmessage = (event) => {
+          const { type, orderId: evtOrderId, driverName } = event.data || {};
+          if (String(evtOrderId) === String(orderId)) {
+            if (type === 'DRIVER_ACCEPTED_RUN') {
+              // Trigger Live Driver Movement to Restaurant (Phase 1)
+              setIsLiveDriving(false);
+              setPickupProgress(0.0);
+              setIsLivePickupDriving(true);
+              setTrackingData((prev) => prev ? {
+                ...prev,
+                driverName: driverName || prev.driverName || 'Rohan Sharma',
+                message: `🚴 Driver assigned! Heading to restaurant to pick up fresh food.`
+              } : prev);
+            } else if (type === 'DRIVER_COLLECTED_ORDER') {
+              // Trigger Instant Live Driver Movement to Customer (Phase 2)
+              setIsLivePickupDriving(false);
+              setPickupProgress(1.0);
+              setIsLiveDriving(true);
+              setTrackingData((prev) => prev ? {
+                ...prev,
+                orderStatus: 'OUT_FOR_DELIVERY',
+                progressPercent: Math.max(prev.progressPercent || 6, 6),
+                message: `⚡ Food Collected! Driver is on the road to your doorstep.`
+              } : prev);
+            }
+          }
+        };
+      }
+    } catch (e) {
+      console.warn('BroadcastChannel sync unavailable:', e);
+    }
+
+    // Storage event fallback for cross-tab sync
+    const handleStorageEvent = (e) => {
+      if (e.key === 'swiggy_last_driver_event' && e.newValue) {
+        try {
+          const { type, orderId: evtOrderId, driverName } = JSON.parse(e.newValue);
+          if (String(evtOrderId) === String(orderId)) {
+            if (type === 'DRIVER_ACCEPTED_RUN') {
+              setIsLiveDriving(false);
+              setPickupProgress(0.0);
+              setIsLivePickupDriving(true);
+              setTrackingData((prev) => prev ? {
+                ...prev,
+                driverName: driverName || prev.driverName || 'Rohan Sharma',
+                message: `🚴 Driver assigned! Heading to restaurant to pick up fresh food.`
+              } : prev);
+            } else if (type === 'DRIVER_COLLECTED_ORDER') {
+              setIsLivePickupDriving(false);
+              setPickupProgress(1.0);
+              setIsLiveDriving(true);
+              setTrackingData((prev) => prev ? {
+                ...prev,
+                orderStatus: 'OUT_FOR_DELIVERY',
+                progressPercent: Math.max(prev.progressPercent || 6, 6),
+                message: `⚡ Food Collected! Driver is on the road to your doorstep.`
+              } : prev);
+            }
+          }
+        } catch (err) {}
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+
+    return () => {
+      if (bc) bc.close();
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, [orderId]);
+
+  // 3. Connect to STOMP WebSocket topic /topic/orders/{orderId}/tracking
   useEffect(() => {
     if (!orderId) return;
 
     const client = new TrackingSocketClient(
       orderId,
       (incomingTelemetry) => {
-        // console.log('[STOMP Message Received]:', incomingTelemetry);
-        setTrackingData(incomingTelemetry);
+        setTrackingData((prev) => {
+          // If status transitioned to OUT_FOR_DELIVERY, AUTO-START LIVE ROAD DELIVERY!
+          if (incomingTelemetry.orderStatus === 'OUT_FOR_DELIVERY') {
+            if (!prev || prev.orderStatus !== 'OUT_FOR_DELIVERY') {
+              setIsLivePickupDriving(false);
+              setPickupProgress(1.0);
+              setIsLiveDriving(true);
+            }
+          } else if (
+            incomingTelemetry.driverName && 
+            ['RESTAURANT_ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'].includes(incomingTelemetry.orderStatus)
+          ) {
+            if (!prev?.driverName) {
+              setPickupProgress(0.0);
+              setIsLivePickupDriving(true);
+            }
+          }
+          return incomingTelemetry;
+        });
       },
       (status) => {
         setConnectionStatus(status);
@@ -161,14 +297,46 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     };
   }, [orderId]);
 
-  // 3. Continuous Live Driving Simulator Loop
+  // 4. Continuous Live Pickup Simulator Loop (Outpost -> Restaurant)
+  useEffect(() => {
+    let intervalId = null;
+    if (isLivePickupDriving) {
+      intervalId = setInterval(() => {
+        setPickupProgress((prev) => {
+          if (prev >= 1.0) {
+            setIsLivePickupDriving(false);
+            setTrackingData((td) => td ? {
+              ...td,
+              message: `🏪 Driver arrived at ${td.restaurantName || 'Restaurant'}! Waiting to collect your food.`
+            } : td);
+            return 1.0;
+          }
+          const increment = 0.035 * driveSpeed;
+          const next = Math.min(1.0, prev + increment);
+          if (next >= 1.0) {
+            setIsLivePickupDriving(false);
+            setTrackingData((td) => td ? {
+              ...td,
+              message: `🏪 Driver arrived at ${td.restaurantName || 'Restaurant'}! Waiting to collect your food.`
+            } : td);
+          }
+          return next;
+        });
+      }, 400 / driveSpeed);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isLivePickupDriving, driveSpeed]);
+
+  // 5. Continuous Live Delivery Driving Simulator Loop (Restaurant -> Customer)
   useEffect(() => {
     let intervalId = null;
     if (isLiveDriving) {
       intervalId = setInterval(() => {
         setTrackingData((prev) => {
           if (!prev) return prev;
-          const currentProgress = (prev.progressPercent || 15) / 100.0;
+          const currentProgress = (prev.progressPercent || 6) / 100.0;
           if (currentProgress >= 1.0) {
             setIsLiveDriving(false);
             return {
@@ -190,7 +358,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
           let nextStatus = prev.orderStatus;
           if (nextProgress >= 0.98) {
             nextStatus = 'DELIVERED';
-          } else if (nextProgress >= 0.15 && nextStatus !== 'DELIVERED') {
+          } else if (nextProgress >= 0.06 && nextStatus !== 'DELIVERED') {
             nextStatus = 'OUT_FOR_DELIVERY';
           }
 
@@ -218,7 +386,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     };
   }, [isLiveDriving, driveSpeed, orderId]);
 
-  // 4. Simulator Step (+20% progress along route)
+  // 6. Simulator Step (+20% progress along route)
   const handleStepProgress = async (delta = 0.20) => {
     if (!trackingData || simulating) return;
     setSimulating(true);
@@ -235,13 +403,15 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     }
   };
 
-  // 5. Reset Simulation to Restaurant (0%)
+  // 7. Reset Simulation to Outpost (0%)
   const handleResetSimulation = async () => {
     setIsLiveDriving(false);
+    setIsLivePickupDriving(false);
+    setPickupProgress(0.0);
     if (!trackingData || simulating) return;
     setSimulating(true);
     try {
-      const updated = await simulateTrackingStep(orderId, 0.05);
+      const updated = await simulateTrackingStep(orderId, 0.0);
       setTrackingData(updated);
     } catch (err) {
       console.error('Reset simulation failed:', err);
@@ -282,19 +452,22 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
   const driverLng = trackingData.currentLongitude ? parseFloat(trackingData.currentLongitude) : restLng;
 
   // Calculate Normalized Map Position strictly along Paved Asphalt Roads
-  const progressRatio = (trackingData.progressPercent || 10) / 100.0;
+  const progressRatio = (trackingData.progressPercent || 6) / 100.0;
   const isDehradun = 
     trackingData.restaurantAddress?.toLowerCase().includes('dehradun') || 
     trackingData.deliveryAddress?.toLowerCase().includes('dehradun') ||
     trackingData.restaurantName?.toLowerCase().includes('paltan') ||
     trackingData.restaurantName?.toLowerCase().includes('rajpur');
 
-  // Exact piecewise calculation along authentic road corridors
-  const roadNav = calculateRoadNavigation(progressRatio);
-  const bikeX = roadNav.x;
-  const bikeY = roadNav.y;
-  const headingAngle = roadNav.heading;
-  const trailSvgPath = roadNav.trailPath;
+  // Determine whether driver is in Pickup Leg (Outpost -> Restro) or Delivery Leg (Restro -> Customer)
+  const isDeliveryLeg = ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(trackingData.orderStatus);
+  const deliveryNav = calculateRoadNavigation(progressRatio);
+  const pickupNav = calculatePickupNavigation(pickupProgress);
+  const activeNav = isDeliveryLeg ? deliveryNav : pickupNav;
+
+  const bikeX = activeNav.x;
+  const bikeY = activeNav.y;
+  const headingAngle = activeNav.heading;
   const fullRoadPath = "M 140 330 L 440 330 Q 470 330 470 300 L 470 150 Q 470 120 500 120 L 660 120";
 
   // Status Stepper Items
@@ -344,16 +517,24 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
             <div className="map-hud-eta-box">
               <Clock size={20} color="#fc8019" />
               <div>
-                <span className="map-hud-eta-sub">ESTIMATED ARRIVAL</span>
+                <span className="map-hud-eta-sub">
+                  {isDeliveryLeg ? 'ESTIMATED DELIVERY' : 'ESTIMATED PICKUP'}
+                </span>
                 <strong className="map-hud-eta-val">
-                  {trackingData.orderStatus === 'DELIVERED' ? 'Delivered!' : `${trackingData.etaMinutes || 18} Mins`}
+                  {trackingData.orderStatus === 'DELIVERED' 
+                    ? 'Delivered!' 
+                    : (isDeliveryLeg ? `${trackingData.etaMinutes || 18} Mins` : `${Math.max(1, Math.round(3 * (1 - pickupProgress)))} Mins`)}
                 </strong>
               </div>
             </div>
 
             <div className="map-hud-dist-box">
-              <span className="map-hud-dist-sub">DISTANCE</span>
-              <strong className="map-hud-dist-val">{trackingData.distanceRemainingKm || 1.4} km away</strong>
+              <span className="map-hud-dist-sub">
+                {isDeliveryLeg ? 'TO CUSTOMER' : 'TO RESTAURANT'}
+              </span>
+              <strong className="map-hud-dist-val">
+                {isDeliveryLeg ? `${trackingData.distanceRemainingKm || 1.4} km away` : `${Math.max(50, Math.round((1 - pickupProgress) * 350))} m away`}
+              </strong>
             </div>
           </div>
 
@@ -363,19 +544,22 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
             {/* Live Turn-by-Turn Navigation HUD Pill */}
             <div className="turn-by-turn-hud">
               <div className="turn-hud-icon-badge">
-                {roadNav.iconName === 'ArrowRight' && <ArrowRight size={18} />}
-                {roadNav.iconName === 'CornerUpLeft' && <CornerUpLeft size={18} />}
-                {roadNav.iconName === 'ArrowUp' && <ArrowUp size={18} />}
-                {roadNav.iconName === 'CornerUpRight' && <CornerUpRight size={18} />}
-                {roadNav.iconName === 'CheckCircle2' && <CheckCircle2 size={18} />}
+                {activeNav.iconName === 'ArrowRight' && <ArrowRight size={18} />}
+                {activeNav.iconName === 'CornerUpLeft' && <CornerUpLeft size={18} />}
+                {activeNav.iconName === 'ArrowUp' && <ArrowUp size={18} />}
+                {activeNav.iconName === 'CornerUpRight' && <CornerUpRight size={18} />}
+                {activeNav.iconName === 'CheckCircle2' && <CheckCircle2 size={18} />}
+                {activeNav.iconName === 'Store' && <Store size={18} />}
               </div>
               <div className="turn-hud-details">
-                <span className="turn-hud-sub">TURN-BY-TURN GUIDANCE</span>
-                <strong className="turn-hud-instruction">{roadNav.instruction}</strong>
+                <span className="turn-hud-sub">
+                  {isDeliveryLeg ? 'DELIVERY NAVIGATION GUIDANCE' : 'PICKUP DISPATCH GUIDANCE'}
+                </span>
+                <strong className="turn-hud-instruction">{activeNav.instruction}</strong>
               </div>
               <div className="turn-hud-dist-tag">
                 <Navigation size={13} />
-                <span>{roadNav.distToTurn}</span>
+                <span>{activeNav.distToTurn}</span>
               </div>
             </div>
 
@@ -388,8 +572,8 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
 
                 {/* Pulsing beacon filter */}
                 <radialGradient id="beaconGlow" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%" stopColor="#00b074" stopOpacity="0.6" />
-                  <stop offset="100%" stopColor="#00b074" stopOpacity="0" />
+                  <stop offset="0%" stopColor={isDeliveryLeg ? "#00b074" : "#fc8019"} stopOpacity="0.6" />
+                  <stop offset="100%" stopColor={isDeliveryLeg ? "#00b074" : "#fc8019"} stopOpacity="0" />
                 </radialGradient>
               </defs>
 
@@ -426,6 +610,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               <path d="M 0 330 L 800 330" stroke="#fcc419" strokeWidth="2" strokeDasharray="10 8" />
               <path d="M 0 120 L 800 120" stroke="#fcc419" strokeWidth="2" strokeDasharray="10 8" />
               <path d="M 470 0 L 470 450" stroke="#ffffff" strokeWidth="2" strokeDasharray="10 8" opacity="0.8" />
+              <path d="M 140 330 L 140 450" stroke="#fcc419" strokeWidth="2" strokeDasharray="8 6" />
 
               {/* Zebra Crosswalk Markings */}
               <g stroke="#ffffff" strokeWidth="3" opacity="0.65">
@@ -435,38 +620,85 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
                 <line x1="510" y1="108" x2="510" y2="132" strokeDasharray="3 3" />
               </g>
 
-              {/* DELIVERY ROUTE RUNNING DIRECTLY DOWN ASPHALT CORRIDOR */}
-              {/* Underlying Route Guide */}
-              <path
-                d={fullRoadPath}
-                fill="none"
-                stroke="#495057"
-                strokeWidth="10"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity="0.5"
-              />
-              <path
-                d={fullRoadPath}
-                fill="none"
-                stroke="#00b074"
-                strokeWidth="6"
-                strokeDasharray="8 8"
-                className="animated-route-dash"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+              {/* DRIVER OUTPOST MARKER (South Feeder Road) */}
+              <g transform="translate(140, 440)">
+                <circle r="12" fill="#212529" stroke="#495057" strokeWidth="2" />
+                <circle r="5" fill="#fc8019" />
+                <text x="20" y="4" fill="#868e96" fontSize="9" fontWeight="800">
+                  DRIVER OUTPOST
+                </text>
+              </g>
 
-              {/* Traveled Paved Road Trail (Solid Emerald Neon) */}
-              {progressRatio > 0.01 && (
-                <path
-                  d={trailSvgPath}
-                  fill="none"
-                  stroke="#00b074"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              {/* PHASE 1: PICKUP ROUTE (South Feeder to Restaurant) */}
+              {!isDeliveryLeg && (
+                <>
+                  <path
+                    d="M 140 440 L 140 330"
+                    fill="none"
+                    stroke="#fd7e14"
+                    strokeWidth="5"
+                    strokeDasharray="6 6"
+                    className="animated-route-dash"
+                    strokeLinecap="round"
+                    opacity="0.8"
+                  />
+                  {pickupProgress > 0.01 && (
+                    <path
+                      d={pickupNav.trailPath}
+                      fill="none"
+                      stroke="#fc8019"
+                      strokeWidth="7"
+                      strokeLinecap="round"
+                    />
+                  )}
+                </>
+              )}
+
+              {/* PHASE 2: DELIVERY ROUTE (Restaurant to Customer Dropoff) */}
+              {isDeliveryLeg && (
+                <>
+                  {/* Completed Pickup Leg in Subtle Trail */}
+                  <path
+                    d="M 140 440 L 140 330"
+                    fill="none"
+                    stroke="#00b074"
+                    strokeWidth="4"
+                    opacity="0.35"
+                    strokeLinecap="round"
+                  />
+                  {/* Underlying Route Guide */}
+                  <path
+                    d={fullRoadPath}
+                    fill="none"
+                    stroke="#495057"
+                    strokeWidth="10"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity="0.5"
+                  />
+                  <path
+                    d={fullRoadPath}
+                    fill="none"
+                    stroke="#00b074"
+                    strokeWidth="6"
+                    strokeDasharray="8 8"
+                    className="animated-route-dash"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {/* Traveled Paved Road Trail (Solid Emerald Neon) */}
+                  {progressRatio > 0.01 && (
+                    <path
+                      d={deliveryNav.trailPath}
+                      fill="none"
+                      stroke="#00b074"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+                </>
               )}
 
               {/* CITY LANDMARKS ALONG THE ROADS */}
@@ -526,13 +758,13 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               {/* LIVE DELIVERY PARTNER (Bike moving strictly on road with dynamic turning) */}
               <g 
                 transform={`translate(${bikeX}, ${bikeY})`}
-                style={{ transition: isLiveDriving ? 'transform 0.55s linear' : 'transform 0.5s ease-out' }}
+                style={{ transition: (isLiveDriving || isLivePickupDriving) ? 'transform 0.45s linear' : 'transform 0.5s ease-out' }}
               >
                 {/* Pulsing radar ripple */}
                 <circle r="26" fill="url(#beaconGlow)" className="beacon-pulse-fast" />
                 
                 {/* Bike Badge Background */}
-                <circle r="18" fill="#00b074" stroke="#ffffff" strokeWidth="2.5" />
+                <circle r="18" fill={isDeliveryLeg ? "#00b074" : "#fc8019"} stroke="#ffffff" strokeWidth="2.5" />
                 
                 {/* Bike Icon (oriented strictly down the road) */}
                 <g transform={`rotate(${headingAngle + 18}) translate(-10, -10) scale(0.85)`}>
@@ -548,9 +780,9 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
 
                 {/* Floating Partner Tooltip */}
                 <g transform="translate(0, -28)">
-                  <rect x="-44" y="-18" width="88" height="20" rx="6" fill="#1e2229" opacity="0.92" />
+                  <rect x="-48" y="-18" width="96" height="20" rx="6" fill="#1e2229" opacity="0.92" />
                   <text x="0" y="-4" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="800">
-                    {trackingData.driverName ? trackingData.driverName.split(' ')[0] : 'Partner'} • {Math.round(progressRatio * 100)}%
+                    {trackingData.driverName ? trackingData.driverName.split(' ')[0] : 'Partner'} • {isDeliveryLeg ? `${Math.round(progressRatio * 100)}%` : (pickupProgress >= 0.95 ? 'At Restro' : 'To Restro')}
                   </text>
                 </g>
               </g>
@@ -587,26 +819,73 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
           {/* Interactive Route Simulation Controls */}
           <div className="map-simulator-toolbar">
             <div className="sim-toolbar-group">
-              <span className="sim-label">Live Trip Simulation:</span>
-              <button
-                className={`sim-btn ${isLiveDriving ? 'pause-btn' : 'live-drive-btn'}`}
-                onClick={() => {
-                  if (trackingData.orderStatus === 'DELIVERED' || trackingData.progressPercent >= 100) {
-                    handleResetSimulation().then(() => setIsLiveDriving(true));
-                  } else {
-                    setIsLiveDriving(!isLiveDriving);
-                  }
-                }}
-                disabled={simulating}
-                title={isLiveDriving ? "Pause live delivery" : "Start continuous live delivery journey"}
-              >
-                {isLiveDriving ? <Pause size={15} /> : <Play size={15} />}
-                <span>
-                  {isLiveDriving 
-                    ? 'Pause Trip' 
-                    : (trackingData.orderStatus === 'DELIVERED' ? 'Replay Live Trip' : 'Start Live Delivery Trip')}
-                </span>
-              </button>
+              <span className="sim-label">Live Simulation:</span>
+              
+              {!isDeliveryLeg ? (
+                /* Phase 1: Pickup Controls */
+                <>
+                  <button
+                    className={`sim-btn ${isLivePickupDriving ? 'pause-btn' : 'live-drive-btn'}`}
+                    onClick={() => {
+                      if (pickupProgress >= 1.0) {
+                        setPickupProgress(0.0);
+                        setIsLivePickupDriving(true);
+                      } else {
+                        setIsLivePickupDriving(!isLivePickupDriving);
+                      }
+                    }}
+                    title="Simulate driver moving from outpost to restaurant for pickup"
+                  >
+                    {isLivePickupDriving ? <Pause size={15} /> : <Play size={15} />}
+                    <span>{isLivePickupDriving ? 'Pause Pickup' : (pickupProgress >= 1.0 ? 'Replay Pickup' : 'Start Live Pickup')}</span>
+                  </button>
+
+                  <button
+                    className="sim-btn live-drive-btn"
+                    onClick={async () => {
+                      // Collect order & immediately trigger live delivery!
+                      setIsLivePickupDriving(false);
+                      setPickupProgress(1.0);
+                      setIsLiveDriving(true);
+                      setTrackingData((prev) => prev ? {
+                        ...prev,
+                        orderStatus: 'OUT_FOR_DELIVERY',
+                        progressPercent: Math.max(prev.progressPercent || 6, 6),
+                        message: '⚡ Food Collected! Driver is on the road to your doorstep.'
+                      } : prev);
+                      try {
+                        await simulateTrackingStep(orderId, 0.06);
+                      } catch (e) {}
+                    }}
+                    style={{ background: '#00b074' }}
+                    title="Collect order now and auto-start live delivery road trip"
+                  >
+                    <Zap size={14} />
+                    <span>Collect & Auto-Drive</span>
+                  </button>
+                </>
+              ) : (
+                /* Phase 2: Delivery Controls */
+                <button
+                  className={`sim-btn ${isLiveDriving ? 'pause-btn' : 'live-drive-btn'}`}
+                  onClick={() => {
+                    if (trackingData.orderStatus === 'DELIVERED' || trackingData.progressPercent >= 100) {
+                      handleResetSimulation().then(() => setIsLiveDriving(true));
+                    } else {
+                      setIsLiveDriving(!isLiveDriving);
+                    }
+                  }}
+                  disabled={simulating}
+                  title={isLiveDriving ? "Pause live delivery" : "Start continuous live delivery journey"}
+                >
+                  {isLiveDriving ? <Pause size={15} /> : <Play size={15} />}
+                  <span>
+                    {isLiveDriving 
+                      ? 'Pause Trip' 
+                      : (trackingData.orderStatus === 'DELIVERED' ? 'Replay Live Trip' : 'Start Live Delivery Trip')}
+                  </span>
+                </button>
+              )}
 
               <div className="speed-pills-wrap">
                 <span className="speed-title">Speed:</span>
@@ -624,23 +903,25 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
             </div>
 
             <div className="sim-toolbar-group right">
-              <button
-                className="sim-btn step-btn"
-                onClick={() => handleStepProgress(0.20)}
-                disabled={simulating || isLiveDriving || trackingData.progressPercent >= 100}
-                title="Step driver location forward along delivery route"
-              >
-                <Zap size={14} />
-                <span>Step (+20%)</span>
-              </button>
+              {isDeliveryLeg && (
+                <button
+                  className="sim-btn step-btn"
+                  onClick={() => handleStepProgress(0.20)}
+                  disabled={simulating || isLiveDriving || trackingData.progressPercent >= 100}
+                  title="Step driver location forward along delivery route"
+                >
+                  <Zap size={14} />
+                  <span>Step (+20%)</span>
+                </button>
+              )}
               <button
                 className="sim-btn reset-btn"
                 onClick={handleResetSimulation}
                 disabled={simulating}
-                title="Reset driver location to restaurant"
+                title="Reset simulation to initial dispatch outpost"
               >
                 <RotateCcw size={14} />
-                <span>Reset</span>
+                <span>Reset Outpost</span>
               </button>
             </div>
           </div>

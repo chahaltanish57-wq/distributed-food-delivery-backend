@@ -152,138 +152,99 @@ export default function Navbar({
       </div>
 
       <div className="nav-right">
-        {/* Auth Section */}
-        {user ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: '#f8f9fa',
-              padding: '0.4rem 0.85rem',
-              borderRadius: '20px',
-              border: '1px solid #e9ecef',
-              fontSize: '0.88rem',
-              fontWeight: 700
-            }}>
-              <div style={{
-                width: '26px',
-                height: '26px',
-                borderRadius: '50%',
-                background: '#fc8019',
-                color: '#fff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.8rem'
-              }}>
-                {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
-              </div>
-              <span>Hi, {user.fullName.split(' ')[0]}</span>
-            </div>
-
-            <button
-              onClick={onLogout}
-              title="Sign Out"
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#868e96',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '0.4rem',
-                borderRadius: '8px',
-                transition: 'color 0.15s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.color = '#e23744'}
-              onMouseLeave={(e) => e.currentTarget.style.color = '#868e96'}
-            >
-              <LogOut size={18} />
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={onOpenAuth}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.45rem',
-              background: '#ffffff',
-              border: '1px solid #ced4da',
-              color: '#343a40',
-              padding: '0.55rem 1rem',
-              borderRadius: '10px',
-              fontWeight: 700,
-              fontSize: '0.88rem',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            <User size={16} />
-            <span>Sign In</span>
-          </button>
-        )}
-
-        {/* Day 9: Kitchen Portal Switcher */}
-        <button 
-          className={`kds-nav-toggle-btn ${viewMode === 'KITCHEN' ? 'active' : ''}`}
-          onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'KITCHEN' ? 'CUSTOMER' : 'KITCHEN') : onToggleViewMode()}
-          title={viewMode === 'KITCHEN' ? 'Switch back to Customer Storefront' : 'Open Restaurant Kitchen Display System'}
-        >
-          <ChefHat size={17} />
-          <span>{viewMode === 'KITCHEN' ? 'Storefront' : 'Kitchen KDS'}</span>
-        </button>
-
-        {/* Day 10: Driver Portal Switcher */}
-        <button 
-          className={`driver-nav-toggle-btn ${viewMode === 'DRIVER' ? 'active' : ''}`}
-          onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'DRIVER' ? 'CUSTOMER' : 'DRIVER') : null}
-          title={viewMode === 'DRIVER' ? 'Switch back to Customer Storefront' : 'Open Driver Dispatch & Fleet Simulator'}
-        >
-          <Bike size={17} />
-          <span>{viewMode === 'DRIVER' ? 'Storefront' : 'Driver App'}</span>
-        </button>
-
-        {/* Day 11: Live Order Tracking Switcher */}
-        {activeTrackingOrderId && (
+        {/* Role & Simulator Portals Segmented Pill */}
+        <div className="nav-portal-group">
+          {/* Kitchen Portal Switcher */}
           <button 
-            className={`tracking-nav-toggle-btn ${viewMode === 'TRACKING' ? 'active' : ''}`}
-            onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'TRACKING' ? 'CUSTOMER' : 'TRACKING') : null}
-            title="Live Order Tracking Map"
+            className={`portal-segment-btn ${viewMode === 'KITCHEN' ? 'active' : ''}`}
+            onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'KITCHEN' ? 'CUSTOMER' : 'KITCHEN') : onToggleViewMode()}
+            title={viewMode === 'KITCHEN' ? 'Switch back to Customer Storefront' : 'Open Restaurant Kitchen Display System'}
           >
-            <Navigation size={16} />
-            <span>{viewMode === 'TRACKING' ? 'Storefront' : 'Track Order'}</span>
+            <ChefHat size={16} />
+            <span>Kitchen</span>
           </button>
-        )}
 
-        {/* My Orders Drawer Button */}
-        <button 
-          className="nav-orders-btn"
-          onClick={onOpenOrders}
-          title="View Past and Active Orders"
-        >
-          <Receipt size={17} />
-          <span>My Orders</span>
-        </button>
-
-        {/* Dark Mode Theme Toggle */}
-        <button 
-          className="theme-toggle-btn"
-          onClick={onToggleTheme}
-          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Night Theme"}
-        >
-          {theme === 'dark' ? <Sun size={18} color="#ffd43b" /> : <Moon size={18} color="#495057" />}
-        </button>
-
-        {/* Cart Section */}
-        {viewMode === 'CUSTOMER' && (
-          <button className="cart-btn" onClick={onCartClick}>
-            <ShoppingBag size={18} />
-            <span>Cart</span>
-            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          {/* Driver Portal Switcher */}
+          <button 
+            className={`portal-segment-btn ${viewMode === 'DRIVER' ? 'active' : ''}`}
+            onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'DRIVER' ? 'CUSTOMER' : 'DRIVER') : null}
+            title={viewMode === 'DRIVER' ? 'Switch back to Customer Storefront' : 'Open Driver Dispatch & Fleet Simulator'}
+          >
+            <Bike size={16} />
+            <span>Driver</span>
           </button>
-        )}
+
+          {/* Live Order Tracking Switcher */}
+          {activeTrackingOrderId && (
+            <button 
+              className={`portal-segment-btn ${viewMode === 'TRACKING' ? 'active' : ''}`}
+              onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'TRACKING' ? 'CUSTOMER' : 'TRACKING') : null}
+              title="Live Order Tracking Map"
+            >
+              <Navigation size={15} />
+              <span>Track</span>
+            </button>
+          )}
+        </div>
+
+        {/* Customer Actions & Global Utilities */}
+        <div className="nav-actions-group">
+          {/* My Orders Drawer Button */}
+          <button 
+            className="nav-orders-btn"
+            onClick={onOpenOrders}
+            title="View Past and Active Orders"
+          >
+            <Receipt size={16} />
+            <span>My Orders</span>
+          </button>
+
+          {/* Dark Mode Theme Toggle */}
+          <button 
+            className="theme-toggle-btn"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Night Theme"}
+          >
+            {theme === 'dark' ? <Sun size={17} color="#ffd43b" /> : <Moon size={17} color="#495057" />}
+          </button>
+
+          {/* Cart Section */}
+          {viewMode === 'CUSTOMER' && (
+            <button className="cart-btn" onClick={onCartClick}>
+              <ShoppingBag size={17} />
+              <span>Cart</span>
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </button>
+          )}
+
+          {/* Auth Section */}
+          {user ? (
+            <div className="nav-user-profile">
+              <div className="user-avatar-badge">
+                <div className="user-avatar-initial">
+                  {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                </div>
+                <span className="user-firstname">Hi, {user.fullName.split(' ')[0]}</span>
+              </div>
+
+              <button
+                onClick={onLogout}
+                title="Sign Out"
+                className="user-logout-btn"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="nav-signin-btn"
+            >
+              <User size={16} />
+              <span>Sign In</span>
+            </button>
+          )}
+        </div>
       </div>
     </header>
   );
