@@ -2633,16 +2633,28 @@ body {
 /* Map Simulation Toolbar */
 .map-simulator-toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.85rem;
   padding: 0.85rem 1.5rem;
   background: #ffffff;
   border-top: 1px solid #f1f3f5;
   flex-wrap: wrap;
+  gap: 0.85rem;
+}
+
+.sim-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sim-toolbar-group.right {
+  margin-left: auto;
 }
 
 .sim-label {
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   font-weight: 800;
   color: #495057;
 }
@@ -2650,23 +2662,90 @@ body {
 .sim-btn {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 0.9rem;
-  border-radius: 10px;
-  font-size: 0.82rem;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: 12px;
+  font-size: 0.84rem;
   font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.sim-btn.live-drive-btn {
+  background: linear-gradient(135deg, #00b074 0%, #029462 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 176, 116, 0.35);
+  animation: pulseButton 2.2s infinite;
+}
+.sim-btn.live-drive-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 176, 116, 0.45);
+}
+
+.sim-btn.pause-btn {
+  background: #fff3bf;
+  color: #f08c00;
+  border: 1.5px solid #ffe066;
+}
+.sim-btn.pause-btn:hover:not(:disabled) {
+  background: #ffe066;
+}
+
+@keyframes pulseButton {
+  0%, 100% {
+    box-shadow: 0 4px 14px rgba(0, 176, 116, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 22px rgba(0, 176, 116, 0.6);
+  }
+}
+
+.speed-pills-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #f8f9fa;
+  padding: 3px 6px;
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+}
+
+.speed-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #868e96;
+  margin-right: 2px;
+  text-transform: uppercase;
+}
+
+.speed-pill {
+  border: none;
+  background: transparent;
+  color: #495057;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s;
 }
+.speed-pill:hover {
+  background: #e9ecef;
+}
+.speed-pill.active {
+  background: #1e2229;
+  color: #ffffff;
+}
 
 .sim-btn.step-btn {
-  background: #00b074;
-  color: #ffffff;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 176, 116, 0.3);
+  background: #f8f9fa;
+  color: #00b074;
+  border: 1.5px solid #b2f2bb;
 }
 .sim-btn.step-btn:hover:not(:disabled) {
-  background: #029462;
+  background: #e6fcf5;
+  border-color: #00b074;
 }
 
 .sim-btn.reset-btn {
@@ -2676,6 +2755,85 @@ body {
 }
 .sim-btn.reset-btn:hover:not(:disabled) {
   background: #e9ecef;
+}
+
+/* Delivered Overlay */
+.map-delivered-overlay {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  right: 1.5rem;
+  z-index: 10;
+  animation: slideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.delivered-celebration-card {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  border: 2px solid #b2f2bb;
+  border-radius: 18px;
+  padding: 1.1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 176, 116, 0.2);
+}
+
+.celebration-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #e6fcf5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.celebration-text h4 {
+  margin: 0 0 2px;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #1e2229;
+}
+
+.celebration-text p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #686b78;
+}
+
+.celebration-replay-btn {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-radius: 10px;
+  border: 1px solid #ced4da;
+  background: #ffffff;
+  color: #1e2229;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.celebration-replay-btn:hover {
+  background: #f8f9fa;
+  border-color: #00b074;
+  color: #00b074;
 }
 
 /* Right Sidebar Cards */

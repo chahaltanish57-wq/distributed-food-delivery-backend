@@ -11,10 +11,12 @@ import {
   ArrowLeft, 
   Navigation, 
   Play, 
+  Pause,
   RotateCcw,
   Sparkles,
   Radio,
-  ChefHat
+  ChefHat,
+  Zap
 } from 'lucide-react';
 import { TrackingSocketClient } from '../trackingSocket';
 import { getOrderTracking, simulateTrackingStep, pingDriverTracking } from '../api';
@@ -25,6 +27,8 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [simulating, setSimulating] = useState(false);
+  const [isLiveDriving, setIsLiveDriving] = useState(false);
+  const [driveSpeed, setDriveSpeed] = useState(1);
   const socketClientRef = useRef(null);
 
   // 1. Fetch initial snapshot from REST
@@ -70,7 +74,64 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     };
   }, [orderId]);
 
-  // 3. Simulator Step (+20% progress along route)
+  // 3. Continuous Live Driving Simulator Loop
+  useEffect(() => {
+    let intervalId = null;
+    if (isLiveDriving) {
+      intervalId = setInterval(() => {
+        setTrackingData((prev) => {
+          if (!prev) return prev;
+          const currentProgress = (prev.progressPercent || 15) / 100.0;
+          if (currentProgress >= 1.0) {
+            setIsLiveDriving(false);
+            return {
+              ...prev,
+              orderStatus: 'DELIVERED',
+              progressPercent: 100,
+              etaMinutes: 0,
+              distanceRemainingKm: 0.0,
+              message: '🎉 Delivered! Order handoff completed safely.'
+            };
+          }
+
+          const increment = 0.022 * driveSpeed;
+          const nextProgress = Math.min(1.0, currentProgress + increment);
+          const nextPercent = Math.round(nextProgress * 100);
+          const distRem = Math.max(0.0, Number((2.4 * (1 - nextProgress)).toFixed(1)));
+          const etaRem = Math.max(0, Math.round(18 * (1 - nextProgress)));
+
+          let nextStatus = prev.orderStatus;
+          if (nextProgress >= 0.98) {
+            nextStatus = 'DELIVERED';
+          } else if (nextProgress >= 0.15 && nextStatus !== 'DELIVERED') {
+            nextStatus = 'OUT_FOR_DELIVERY';
+          }
+
+          // Periodic STOMP backend sync
+          if (Math.round(nextProgress * 100) % 8 === 0 || nextProgress >= 1.0) {
+            simulateTrackingStep(orderId, nextProgress).catch((e) => console.warn('Backend sync error:', e));
+          }
+
+          return {
+            ...prev,
+            orderStatus: nextStatus,
+            progressPercent: nextPercent,
+            distanceRemainingKm: distRem,
+            etaMinutes: etaRem,
+            message: nextStatus === 'DELIVERED'
+              ? '🎉 Delivered! Order handoff completed safely.'
+              : `${prev.driverName ? prev.driverName.split(' ')[0] : 'Partner'} is en route (${distRem} km away)`
+          };
+        });
+      }, 550 / driveSpeed);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isLiveDriving, driveSpeed, orderId]);
+
+  // 4. Simulator Step (+20% progress along route)
   const handleStepProgress = async (delta = 0.20) => {
     if (!trackingData || simulating) return;
     setSimulating(true);
@@ -87,8 +148,9 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     }
   };
 
-  // 4. Reset Simulation to Restaurant (0%)
+  // 5. Reset Simulation to Restaurant (0%)
   const handleResetSimulation = async () => {
+    setIsLiveDriving(false);
     if (!trackingData || simulating) return;
     setSimulating(true);
     try {
@@ -148,6 +210,15 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
   const t = Math.max(0.0, Math.min(1.0, progressRatio));
   const bikeX = (1 - t) * (1 - t) * mapStartX + 2 * (1 - t) * t * midX + t * t * mapEndX;
   const bikeY = (1 - t) * (1 - t) * mapStartY + 2 * (1 - t) * t * midY + t * t * mapEndY;
+
+  // Tangent derivative for natural road steering angle
+  const tangentDx = 2 * (1 - t) * (midX - mapStartX) + 2 * t * (mapEndX - midX);
+  const tangentDy = 2 * (1 - t) * (midY - mapStartY) + 2 * t * (mapEndY - midY);
+  const headingAngle = Math.round((Math.atan2(tangentDy, tangentDx) * 180) / Math.PI);
+
+  // Split Bezier sub-curve for the traveled green path (de Casteljau's algorithm)
+  const trailCtrlX = (1 - t) * mapStartX + t * midX;
+  const trailCtrlY = (1 - t) * mapStartY + t * midY;
 
   // Status Stepper Items
   const steps = [
@@ -245,7 +316,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               <path d="M 660 0 L 660 450" stroke="#dee2e6" strokeWidth="16" strokeLinecap="round" />
               <path d="M 0 120 L 800 120" stroke="#dee2e6" strokeWidth="18" strokeLinecap="round" />
 
-              {/* Active Delivery Route (Curved Bezier Path) */}
+              {/* Active Delivery Route (Curved Bezier Path Background) */}
               <path
                 d={`M ${mapStartX} ${mapStartY} Q ${midX} ${midY} ${mapEndX} ${mapEndY}`}
                 fill="none"
@@ -262,6 +333,17 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
                 className="animated-route-dash"
                 strokeLinecap="round"
               />
+
+              {/* Traveled Route Path (Solid Emerald Green Trail) */}
+              {t > 0.01 && (
+                <path
+                  d={`M ${mapStartX} ${mapStartY} Q ${trailCtrlX} ${trailCtrlY} ${bikeX} ${bikeY}`}
+                  fill="none"
+                  stroke="#00b074"
+                  strokeWidth="7"
+                  strokeLinecap="round"
+                />
+              )}
 
               {/* RESTAURANT MARKER (Pickup) */}
               <g transform={`translate(${mapStartX}, ${mapStartY})`}>
@@ -292,7 +374,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               {/* LIVE DELIVERY PARTNER (Bike) */}
               <g 
                 transform={`translate(${bikeX}, ${bikeY})`}
-                style={{ transition: 'all 0.5s ease-out' }}
+                style={{ transition: isLiveDriving ? 'transform 0.55s linear' : 'transform 0.5s ease-out' }}
               >
                 {/* Pulsing radar ripple */}
                 <circle r="26" fill="url(#beaconGlow)" className="beacon-pulse-fast" />
@@ -300,8 +382,8 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
                 {/* Bike Badge Background */}
                 <circle r="18" fill="#00b074" stroke="#ffffff" strokeWidth="2.5" />
                 
-                {/* Bike Icon (embedded SVG) */}
-                <g transform="translate(-10, -10) scale(0.85)">
+                {/* Bike Icon (embedded SVG) with dynamic road steering */}
+                <g transform={`rotate(${headingAngle + 18}) translate(-10, -10) scale(0.85)`}>
                   <path 
                     d="M5.5 17a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM18.5 17a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM15 6h1a2 2 0 0 1 2 2v2M9 14.5 12 7l4 4M12 14.5l-3-4" 
                     fill="none" 
@@ -314,13 +396,32 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
 
                 {/* Floating Partner Tooltip */}
                 <g transform="translate(0, -28)">
-                  <rect x="-42" y="-18" width="84" height="20" rx="6" fill="#1e2229" opacity="0.9" />
+                  <rect x="-44" y="-18" width="88" height="20" rx="6" fill="#1e2229" opacity="0.92" />
                   <text x="0" y="-4" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="800">
                     {trackingData.driverName ? trackingData.driverName.split(' ')[0] : 'Partner'} • {Math.round(progressRatio * 100)}%
                   </text>
                 </g>
               </g>
             </svg>
+
+            {/* Delivered Celebration Overlay */}
+            {trackingData.orderStatus === 'DELIVERED' && (
+              <div className="map-delivered-overlay">
+                <div className="delivered-celebration-card">
+                  <div className="celebration-icon-box">
+                    <Sparkles size={24} color="#00b074" />
+                  </div>
+                  <div className="celebration-text">
+                    <h4>Order Delivered! 🎉</h4>
+                    <p>Your food arrived safely. Enjoy your meal!</p>
+                  </div>
+                  <button className="celebration-replay-btn" onClick={handleResetSimulation}>
+                    <RotateCcw size={14} />
+                    <span>Replay Live Trip</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Bottom Status Overlay */}
             <div className="map-bottom-status-overlay">
@@ -333,25 +434,63 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
 
           {/* Interactive Route Simulation Controls */}
           <div className="map-simulator-toolbar">
-            <span className="sim-label">Demo Simulator Controls:</span>
-            <button
-              className="sim-btn step-btn"
-              onClick={() => handleStepProgress(0.25)}
-              disabled={simulating || trackingData.progressPercent >= 100}
-              title="Step driver location forward along delivery route"
-            >
-              <Play size={14} />
-              <span>Step Bike (+25%)</span>
-            </button>
-            <button
-              className="sim-btn reset-btn"
-              onClick={handleResetSimulation}
-              disabled={simulating}
-              title="Reset driver location to restaurant"
-            >
-              <RotateCcw size={14} />
-              <span>Reset Route</span>
-            </button>
+            <div className="sim-toolbar-group">
+              <span className="sim-label">Live Trip Simulation:</span>
+              <button
+                className={`sim-btn ${isLiveDriving ? 'pause-btn' : 'live-drive-btn'}`}
+                onClick={() => {
+                  if (trackingData.orderStatus === 'DELIVERED' || trackingData.progressPercent >= 100) {
+                    handleResetSimulation().then(() => setIsLiveDriving(true));
+                  } else {
+                    setIsLiveDriving(!isLiveDriving);
+                  }
+                }}
+                disabled={simulating}
+                title={isLiveDriving ? "Pause live delivery" : "Start continuous live delivery journey"}
+              >
+                {isLiveDriving ? <Pause size={15} /> : <Play size={15} />}
+                <span>
+                  {isLiveDriving 
+                    ? 'Pause Trip' 
+                    : (trackingData.orderStatus === 'DELIVERED' ? 'Replay Live Trip' : 'Start Live Delivery Trip')}
+                </span>
+              </button>
+
+              <div className="speed-pills-wrap">
+                <span className="speed-title">Speed:</span>
+                {[1, 2, 4].map((s) => (
+                  <button
+                    key={s}
+                    className={`speed-pill ${driveSpeed === s ? 'active' : ''}`}
+                    onClick={() => setDriveSpeed(s)}
+                    title={`Run at ${s}x speed`}
+                  >
+                    {s}x
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="sim-toolbar-group right">
+              <button
+                className="sim-btn step-btn"
+                onClick={() => handleStepProgress(0.20)}
+                disabled={simulating || isLiveDriving || trackingData.progressPercent >= 100}
+                title="Step driver location forward along delivery route"
+              >
+                <Zap size={14} />
+                <span>Step (+20%)</span>
+              </button>
+              <button
+                className="sim-btn reset-btn"
+                onClick={handleResetSimulation}
+                disabled={simulating}
+                title="Reset driver location to restaurant"
+              >
+                <RotateCcw size={14} />
+                <span>Reset</span>
+              </button>
+            </div>
           </div>
         </div>
 
