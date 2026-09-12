@@ -149,3 +149,54 @@ export const rejectKitchenOrder = async (orderId, reason = 'Kitchen is overwhelm
   const response = await apiClient.patch(`/kitchen/orders/${orderId}/reject`, { reason });
   return response.data.data;
 };
+
+// =========================================================================
+// Day 10: Driver Geospatial Dispatch & Redisson Locking APIs
+// =========================================================================
+
+export const getDrivers = async () => {
+  const response = await apiClient.get('/drivers');
+  return response.data.data;
+};
+
+export const getDriver = async (driverId) => {
+  const response = await apiClient.get(`/drivers/${driverId}`);
+  return response.data.data;
+};
+
+export const getNearbyDrivers = async (latitude, longitude, radiusKm = 6.0) => {
+  const response = await apiClient.get('/drivers/nearby', {
+    params: { latitude, longitude, radiusKm }
+  });
+  return response.data.data;
+};
+
+export const getAvailableOrdersForDriver = async (driverId) => {
+  const response = await apiClient.get(`/drivers/${driverId}/available-orders`);
+  return response.data.data;
+};
+
+export const getActiveMissionForDriver = async (driverId) => {
+  const response = await apiClient.get(`/drivers/${driverId}/active-mission`);
+  return response.data.data;
+};
+
+export const updateDriverLocation = async (driverId, latitude, longitude) => {
+  const response = await apiClient.patch(`/drivers/${driverId}/location`, { latitude, longitude });
+  return response.data.data;
+};
+
+export const acceptDeliveryRun = async (driverId, orderId) => {
+  const response = await apiClient.post(`/drivers/${driverId}/orders/${orderId}/accept`);
+  return response.data.data;
+};
+
+export const pickupDeliveryOrder = async (driverId, orderId) => {
+  const response = await apiClient.patch(`/drivers/${driverId}/orders/${orderId}/pickup`);
+  return response.data.data;
+};
+
+export const completeDeliveryOrder = async (driverId, orderId) => {
+  const response = await apiClient.patch(`/drivers/${driverId}/orders/${orderId}/deliver`);
+  return response.data.data;
+};

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat } from 'lucide-react';
+import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat, Bike } from 'lucide-react';
 
 export default function Navbar({
   user,
@@ -12,7 +12,8 @@ export default function Navbar({
   selectedCity,
   onSelectCity,
   viewMode,
-  onToggleViewMode
+  onToggleViewMode,
+  onSetViewMode
 }) {
   const [showCityMenu, setShowCityMenu] = useState(false);
 
@@ -182,15 +183,25 @@ export default function Navbar({
         {/* Day 9: Kitchen Portal Switcher */}
         <button 
           className={`kds-nav-toggle-btn ${viewMode === 'KITCHEN' ? 'active' : ''}`}
-          onClick={onToggleViewMode}
+          onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'KITCHEN' ? 'CUSTOMER' : 'KITCHEN') : onToggleViewMode()}
           title={viewMode === 'KITCHEN' ? 'Switch back to Customer Storefront' : 'Open Restaurant Kitchen Display System'}
         >
-          <ChefHat size={18} />
-          <span>{viewMode === 'KITCHEN' ? 'Customer View' : 'Kitchen KDS'}</span>
+          <ChefHat size={17} />
+          <span>{viewMode === 'KITCHEN' ? 'Storefront' : 'Kitchen KDS'}</span>
+        </button>
+
+        {/* Day 10: Driver Portal Switcher */}
+        <button 
+          className={`driver-nav-toggle-btn ${viewMode === 'DRIVER' ? 'active' : ''}`}
+          onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'DRIVER' ? 'CUSTOMER' : 'DRIVER') : null}
+          title={viewMode === 'DRIVER' ? 'Switch back to Customer Storefront' : 'Open Driver Dispatch & Fleet Simulator'}
+        >
+          <Bike size={17} />
+          <span>{viewMode === 'DRIVER' ? 'Storefront' : 'Driver App'}</span>
         </button>
 
         {/* Cart Section */}
-        {viewMode !== 'KITCHEN' && (
+        {viewMode === 'CUSTOMER' && (
           <button className="cart-btn" onClick={onCartClick}>
             <ShoppingBag size={18} />
             <span>Cart</span>

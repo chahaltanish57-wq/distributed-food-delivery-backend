@@ -32,6 +32,16 @@ public class OrderDTO implements Serializable {
     private String contactPhone;
     private Integer estimatedDeliveryMinutes;
 
+    // Day 10: Driver Dispatch & Tracking Fields
+    private Long deliveryPartnerId;
+    private String deliveryPartnerName;
+    private String deliveryPartnerPhone;
+    private BigDecimal deliveryLatitude;
+    private BigDecimal deliveryLongitude;
+    private String restaurantAddress;
+    private Double distanceToRestaurantKm;
+    private BigDecimal estimatedPayout;
+
     @Builder.Default
     private List<OrderItemDTO> items = new ArrayList<>();
 

@@ -1,14 +1,19 @@
 package com.fooddelivery.config;
 
+import com.fooddelivery.common.enums.DriverStatus;
 import com.fooddelivery.entity.Customer;
+import com.fooddelivery.entity.DeliveryPartner;
 import com.fooddelivery.entity.MenuItem;
 import com.fooddelivery.entity.Restaurant;
 import com.fooddelivery.repository.CustomerRepository;
+import com.fooddelivery.repository.DeliveryPartnerRepository;
 import com.fooddelivery.repository.MenuItemRepository;
 import com.fooddelivery.repository.RestaurantRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.data.geo.Point;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +29,8 @@ public class DataSeeder implements CommandLineRunner {
     private final RestaurantRepository restaurantRepository;
     private final MenuItemRepository menuItemRepository;
     private final CustomerRepository customerRepository;
+    private final DeliveryPartnerRepository deliveryPartnerRepository;
+    private final StringRedisTemplate redisTemplate;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -31,6 +38,7 @@ public class DataSeeder implements CommandLineRunner {
     public void run(String... args) {
         seedCustomer();
         seedRestaurants();
+        seedDeliveryPartners();
     }
 
     private void seedCustomer() {
@@ -193,5 +201,102 @@ public class DataSeeder implements CommandLineRunner {
         ));
 
         log.info("Seeding complete! 6 restaurants (3 in Noida, 3 in Dehradun) and 24 items with INR pricing created successfully.");
+    }
+
+    private void seedDeliveryPartners() {
+        if (deliveryPartnerRepository.count() == 0) {
+            log.info("Seeding authentic delivery partners for Noida and Dehradun...");
+
+            List<DeliveryPartner> drivers = List.of(
+                    // 1. Noida Sector 18 (near Desi Rasoi)
+                    DeliveryPartner.builder()
+                            .name("Amit Sharma")
+                            .phone("+91 9811100001")
+                            .vehicleType("Hero Splendor (Motorcycle)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("28.5700000"))
+                            .currentLongitude(new BigDecimal("77.3220000"))
+                            .city("Noida")
+                            .isActive(true)
+                            .build(),
+
+                    // 2. Noida Sector 62 (near The Burger Club)
+                    DeliveryPartner.builder()
+                            .name("Rohan Verma")
+                            .phone("+91 9811100002")
+                            .vehicleType("TVS Apache RTR (Motorcycle)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("28.6270000"))
+                            .currentLongitude(new BigDecimal("77.3650000"))
+                            .city("Noida")
+                            .isActive(true)
+                            .build(),
+
+                    // 3. Noida Sector 29 (near Brahmaputra Market)
+                    DeliveryPartner.builder()
+                            .name("Vikram Singh")
+                            .phone("+91 9811100003")
+                            .vehicleType("Honda Activa 6G (Scooter)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("28.5665000"))
+                            .currentLongitude(new BigDecimal("77.3340000"))
+                            .city("Noida")
+                            .isActive(true)
+                            .build(),
+
+                    // 4. Dehradun Rajpur Road / Jakhan (near Kalsang)
+                    DeliveryPartner.builder()
+                            .name("Deepak Rawat")
+                            .phone("+91 9811100004")
+                            .vehicleType("Royal Enfield Hunter (Motorcycle)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("30.3460000"))
+                            .currentLongitude(new BigDecimal("78.0650000"))
+                            .city("Dehradun")
+                            .isActive(true)
+                            .build(),
+
+                    // 5. Dehradun Clock Tower / Paltan Bazaar (near Kumar Sweet House)
+                    DeliveryPartner.builder()
+                            .name("Suresh Negi")
+                            .phone("+91 9811100005")
+                            .vehicleType("Suzuki Access 125 (Scooter)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("30.3240000"))
+                            .currentLongitude(new BigDecimal("78.0420000"))
+                            .city("Dehradun")
+                            .isActive(true)
+                            .build(),
+
+                    // 6. Dehradun Foothills / Dakpatti (near Orchard Cafe)
+                    DeliveryPartner.builder()
+                            .name("Manoj Joshi")
+                            .phone("+91 9811100006")
+                            .vehicleType("Bajaj Pulsar NS200 (Motorcycle)")
+                            .status(DriverStatus.AVAILABLE)
+                            .currentLatitude(new BigDecimal("30.3800000"))
+                            .currentLongitude(new BigDecimal("78.0880000"))
+                            .city("Dehradun")
+                            .isActive(true)
+                            .build()
+            );
+
+            deliveryPartnerRepository.saveAll(drivers);
+            log.info("Saved 6 delivery partners to database.");
+        }
+
+        // Index all active drivers into Redis Geospatial key "drivers:geo"
+        List<DeliveryPartner> allDrivers = deliveryPartnerRepository.findByIsActiveTrue();
+        for (DeliveryPartner d : allDrivers) {
+            if (d.getCurrentLatitude() != null && d.getCurrentLongitude() != null) {
+                // Redis Geo Point: (x = longitude, y = latitude)
+                redisTemplate.opsForGeo().add(
+                        "drivers:geo",
+                        new Point(d.getCurrentLongitude().doubleValue(), d.getCurrentLatitude().doubleValue()),
+                        String.valueOf(d.getId())
+                );
+            }
+        }
+        log.info("Indexed {} delivery partners into Redis Geospatial key [drivers:geo].", allDrivers.size());
     }
 }

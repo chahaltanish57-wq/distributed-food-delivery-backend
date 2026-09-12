@@ -8,6 +8,7 @@ import CheckoutModal from './components/CheckoutModal';
 import PaymentModal from './components/PaymentModal';
 import OrderSuccessModal from './components/OrderSuccessModal';
 import KitchenDashboard from './components/KitchenDashboard';
+import DriverDashboard from './components/DriverDashboard';
 import { 
   getRestaurants, 
   getCart, 
@@ -42,14 +43,18 @@ export default function App() {
   const [successOrder, setSuccessOrder] = useState(null);
   const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
 
-  // Day 9: Kitchen Display System (KDS) View Mode
+  // Day 9 & 10: Multi-Portal View Mode ('CUSTOMER' | 'KITCHEN' | 'DRIVER')
   const [viewMode, setViewMode] = useState(() => {
-    return window.location.hash === '#restaurant' ? 'KITCHEN' : 'CUSTOMER';
+    if (window.location.hash === '#driver') return 'DRIVER';
+    if (window.location.hash === '#restaurant') return 'KITCHEN';
+    return 'CUSTOMER';
   });
 
   useEffect(() => {
     const handleHash = () => {
-      if (window.location.hash === '#restaurant') {
+      if (window.location.hash === '#driver') {
+        setViewMode('DRIVER');
+      } else if (window.location.hash === '#restaurant') {
         setViewMode('KITCHEN');
       } else {
         setViewMode('CUSTOMER');
@@ -59,10 +64,19 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  const handleSetViewMode = (mode) => {
+    setViewMode(mode);
+    if (mode === 'DRIVER') {
+      window.location.hash = 'driver';
+    } else if (mode === 'KITCHEN') {
+      window.location.hash = 'restaurant';
+    } else {
+      window.location.hash = '';
+    }
+  };
+
   const handleToggleViewMode = () => {
-    const next = viewMode === 'CUSTOMER' ? 'KITCHEN' : 'CUSTOMER';
-    setViewMode(next);
-    window.location.hash = next === 'KITCHEN' ? 'restaurant' : '';
+    handleSetViewMode(viewMode === 'CUSTOMER' ? 'KITCHEN' : 'CUSTOMER');
   };
 
   // Authentication State
@@ -264,13 +278,19 @@ export default function App() {
         onSelectCity={setSelectedCity}
         viewMode={viewMode}
         onToggleViewMode={handleToggleViewMode}
+        onSetViewMode={handleSetViewMode}
       />
 
       {/* Day 9: Kitchen Display System (KDS) View */}
       {viewMode === 'KITCHEN' ? (
         <KitchenDashboard
           restaurants={restaurants}
-          onBackToStorefront={handleToggleViewMode}
+          onBackToStorefront={() => handleSetViewMode('CUSTOMER')}
+          showToast={showToast}
+        />
+      ) : viewMode === 'DRIVER' ? (
+        <DriverDashboard
+          onBackToStorefront={() => handleSetViewMode('CUSTOMER')}
           showToast={showToast}
         />
       ) : (
