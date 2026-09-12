@@ -43,6 +43,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: true
+    template:
+      observation-enabled: true
+    listener:
+      observation-enabled: true
     consumer:
       group-id: food-delivery-saga-group
       auto-offset-reset: earliest
@@ -67,7 +71,7 @@ gemini:
     key: ${GEMINI_API_KEY:}
   model: ${GEMINI_MODEL:gemini-2.5-flash}
 
-# Actuator & Prometheus Metrics
+# Actuator, Prometheus Metrics & Zipkin Distributed Tracing
 management:
   endpoints:
     web:
@@ -86,3 +90,9 @@ management:
         http.server.requests: true
       percentiles:
         http.server.requests: 0.5,0.95,0.99
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans

@@ -13,6 +13,7 @@
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
 [![Prometheus](https://img.shields.io/badge/Prometheus-v2.53-E6522C.svg)](https://prometheus.io/)
 [![Grafana](https://img.shields.io/badge/Grafana-11.1-F46800.svg)](https://grafana.com/)
+[![Zipkin](https://img.shields.io/badge/Zipkin-Distributed%20Tracing-orange.svg)](https://zipkin.io/)
 
 An enterprise-grade, event-driven distributed food delivery platform inspired by **Swiggy** and **Zomato**. Engineered to demonstrate production-grade distributed systems patterns: **Choreographed Saga Pattern** with Apache Kafka, **Order Finite State Machines**, **Redis Geospatial Indexing**, **Redisson Distributed Locks** to eliminate driver dispatch race conditions, **Real-Time Live Driver GPS Tracking** via STOMP WebSockets and OSRM turn-by-turn road interpolation, and an intelligent **AI Support Concierge** powered by **Google Gemini 2.5 Flash Function Calling**.
 
@@ -200,6 +201,14 @@ Real-time production metrics collected via **Micrometer → Prometheus → Grafa
 | `hikaricp_connections_active` | Gauge | Live DB connection pool utilization |
 | `jvm_memory_used_bytes` | Gauge | JVM heap and non-heap memory breakdown |
 
+### Distributed Tracing (OpenZipkin & Brave)
+
+End-to-end request tracing is implemented via **Spring Boot 3 Micrometer Tracing (Brave bridge)** and **OpenZipkin**. Every inbound HTTP request receives a unique `traceId` which is automatically propagated through Spring Kafka producer and consumer records across broker boundaries.
+
+- **Zipkin Web UI**: [http://localhost:9411/zipkin/](http://localhost:9411/zipkin/)
+- **Cross-Service Propagation**: Correlates the client's `POST /api/v1/orders` HTTP span directly with the asynchronous `order.created send` producer span and `order.created receive` Saga consumer span under a single root trace.
+- **Trace Sampling**: Configured at `1.0` (100% trace capture) for deterministic debugging and performance profiling.
+
 ---
 
 ## 🚀 Quick Start Guide
@@ -227,6 +236,7 @@ docker compose ps
 | **Kafka UI** | `8085` | [http://localhost:8085](http://localhost:8085) |
 | **Prometheus** | `9090` | [http://localhost:9090](http://localhost:9090) — metrics query UI & target health |
 | **Grafana** | `3000` | [http://localhost:3000](http://localhost:3000) — pre-built dashboard, no login required |
+| **Zipkin** | `9411` | [http://localhost:9411/zipkin/](http://localhost:9411/zipkin/) — Distributed request tracing & flamegraphs |
 
 ### 2. Start the Backend API
 ```bash
@@ -259,6 +269,9 @@ Frontend Web Portal will be live at [http://localhost:5173](http://localhost:517
 | **Delivery Driver** | [http://localhost:5173/driver](http://localhost:5173/driver) | *No login needed* | N/A | Discover nearby delivery runs, claim orders with Redisson locks, drive live GPS route. |
 | **API Docs** | [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) | *Open API* | N/A | Interactive Swagger UI documentation with all REST endpoints. |
 | **Kafka Dashboard**| [http://localhost:8085](http://localhost:8085) | *Open UI* | N/A | Monitor topics, consumer lag, and partition distributions. |
+| **Grafana Dashboard**| [http://localhost:3000](http://localhost:3000) | *Anonymous* | N/A | Production metrics dashboard with 10 pre-configured panels. |
+| **Prometheus UI**   | [http://localhost:9090](http://localhost:9090) | *Open UI* | N/A | Scrape targets health, PromQL querying, and raw TSDB metrics. |
+| **Zipkin Tracing**  | [http://localhost:9411/zipkin/](http://localhost:9411/zipkin/) | *Open UI* | N/A | Distributed request tracing, latency waterfall flamegraphs. |
 
 ---
 
