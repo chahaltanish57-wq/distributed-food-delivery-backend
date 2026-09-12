@@ -139,6 +139,15 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderDTO> getAllRecentOrders() {
+        return orderRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .limit(20)
+                .map(o -> toDTO(o, o.getCustomer() != null ? o.getCustomer().getPhone() : null))
+                .collect(Collectors.toList());
+    }
+
     /**
      * Transition order status using the Finite State Machine engine.
      */

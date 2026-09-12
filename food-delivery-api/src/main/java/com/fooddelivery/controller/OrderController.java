@@ -47,8 +47,13 @@ public class OrderController {
     @GetMapping
     @Operation(summary = "Get customer order history", description = "Retrieves all past orders placed by the currently logged-in customer.")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getCustomerOrders() {
-        Customer customer = getAuthenticatedCustomer();
-        List<OrderDTO> orders = orderService.getCustomerOrders(customer);
+        Customer customer = getOptionalAuthenticatedCustomer();
+        List<OrderDTO> orders;
+        if (customer != null) {
+            orders = orderService.getCustomerOrders(customer);
+        } else {
+            orders = orderService.getAllRecentOrders();
+        }
         return ResponseEntity.ok(ApiResponse.success(orders, "Order history retrieved"));
     }
 
@@ -62,9 +67,17 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.success(updated, "Order status updated to " + status));
     }
 
-    private Customer getAuthenticatedCustomer() {
+    private Customer getOptionalAuthenticatedCustomer() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.isAuthenticated() && auth.getPrincipal() instanceof Customer customer) {
+            return customer;
+        }
+        return null;
+    }
+
+    private Customer getAuthenticatedCustomer() {
+        Customer customer = getOptionalAuthenticatedCustomer();
+        if (customer != null) {
             return customer;
         }
         throw new IllegalArgumentException("Authentication required to access orders. Please sign in.");

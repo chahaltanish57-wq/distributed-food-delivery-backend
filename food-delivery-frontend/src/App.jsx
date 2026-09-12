@@ -10,6 +10,7 @@ import OrderSuccessModal from './components/OrderSuccessModal';
 import KitchenDashboard from './components/KitchenDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import LiveTrackingView from './components/LiveTrackingView';
+import MyOrdersDrawer from './components/MyOrdersDrawer';
 import { 
   getRestaurants, 
   getCart, 
@@ -30,6 +31,12 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   
+  // Theme State ('light' | 'dark')
+  const [theme, setTheme] = useState(() => localStorage.getItem('food_delivery_theme') || 'light');
+  
+  // My Orders Drawer State
+  const [isOrdersDrawerOpen, setIsOrdersDrawerOpen] = useState(false);
+
   // Redis-Backed Cart State
   const [cart, setCart] = useState(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -110,6 +117,41 @@ export default function App() {
     }
   });
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  // Synchronize Dark Mode Theme with HTML root & body
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (theme === 'dark') {
+      document.body.classList.add('dark-theme');
+    } else {
+      document.body.classList.remove('dark-theme');
+    }
+    localStorage.setItem('food_delivery_theme', theme);
+  }, [theme]);
+
+  const handleToggleTheme = () => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
+  // 1-Click Reorder Handler: Re-populates active cart with past order items
+  const handleReorder = async (pastOrder) => {
+    if (!pastOrder || !pastOrder.items || pastOrder.items.length === 0) return;
+    try {
+      showToast(`Reordering dishes from ${pastOrder.restaurantName || 'Restaurant'}... 🍲`);
+      for (const item of pastOrder.items) {
+        if (item.menuItemId) {
+          await addToCart(pastOrder.restaurantId, item.menuItemId, item.quantity || 1, true);
+        }
+      }
+      const updatedCart = await getCart();
+      setCart(updatedCart);
+      setIsCartOpen(true);
+      showToast(`Reordered ${pastOrder.items.length} items successfully! 🛒`);
+    } catch (err) {
+      console.error('Failed to reorder items:', err);
+      showToast('Could not reorder items automatically. Please add from menu.');
+    }
+  };
 
   // 1. Fetch active Cart from Redis on initial load
   useEffect(() => {
@@ -304,6 +346,9 @@ export default function App() {
         onToggleViewMode={handleToggleViewMode}
         onSetViewMode={handleSetViewMode}
         activeTrackingOrderId={activeTrackingOrderId}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
+        onOpenOrders={() => setIsOrdersDrawerOpen(true)}
       />
 
       {/* Day 9: Kitchen Display System (KDS) View */}
@@ -532,6 +577,18 @@ export default function App() {
           </div>
         </div>
       )}
+
+      {/* My Orders History Drawer */}
+      <MyOrdersDrawer
+        isOpen={isOrdersDrawerOpen}
+        onClose={() => setIsOrdersDrawerOpen(false)}
+        onTrackOrder={(orderId) => {
+          setActiveTrackingOrderId(orderId);
+          handleSetViewMode('TRACKING', orderId);
+        }}
+        onReorder={handleReorder}
+        user={user}
+      />
 
       {/* Auth Modal */}
       <AuthModal

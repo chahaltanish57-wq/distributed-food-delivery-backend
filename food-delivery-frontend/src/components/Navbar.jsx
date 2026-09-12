@@ -1,5 +1,19 @@
 import React, { useState } from 'react';
-import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat, Bike, Navigation } from 'lucide-react';
+import { 
+  UtensilsCrossed, 
+  MapPin, 
+  Search, 
+  ShoppingBag, 
+  User, 
+  LogOut, 
+  ChevronDown, 
+  ChefHat, 
+  Bike, 
+  Navigation,
+  Sun,
+  Moon,
+  Receipt
+} from 'lucide-react';
 
 export default function Navbar({
   user,
@@ -14,7 +28,10 @@ export default function Navbar({
   viewMode,
   onToggleViewMode,
   onSetViewMode,
-  activeTrackingOrderId
+  activeTrackingOrderId,
+  theme,
+  onToggleTheme,
+  onOpenOrders
 }) {
   const [showCityMenu, setShowCityMenu] = useState(false);
 
@@ -212,6 +229,25 @@ export default function Navbar({
             <span>{viewMode === 'TRACKING' ? 'Storefront' : 'Track Order'}</span>
           </button>
         )}
+
+        {/* My Orders Drawer Button */}
+        <button 
+          className="nav-orders-btn"
+          onClick={onOpenOrders}
+          title="View Past and Active Orders"
+        >
+          <Receipt size={17} />
+          <span>My Orders</span>
+        </button>
+
+        {/* Dark Mode Theme Toggle */}
+        <button 
+          className="theme-toggle-btn"
+          onClick={onToggleTheme}
+          title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Night Theme"}
+        >
+          {theme === 'dark' ? <Sun size={18} color="#ffd43b" /> : <Moon size={18} color="#495057" />}
+        </button>
 
         {/* Cart Section */}
         {viewMode === 'CUSTOMER' && (
