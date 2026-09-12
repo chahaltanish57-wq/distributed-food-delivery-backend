@@ -156,27 +156,6 @@ sequenceDiagram
 
 ---
 
-## 📅 14-Day Roadmap Completed
-
-| Day | Milestone | Key Deliverables & Systems Built | Status |
-| :---: | :--- | :--- | :---: |
-| **Day 1** | **Infrastructure & Docker Environment** | Multi-container Docker Compose with PostgreSQL 16, Redis 7, Kafka 3.8 KRaft, and Kafka UI. | ✅ Complete |
-| **Day 2** | **Project Scaffolding & Database Schema** | Multi-module Maven setup (`common-dto`, `food-delivery-api`), Flyway migrations V1–V3. | ✅ Complete |
-| **Day 3** | **Restaurant & Menu Catalog + Web UI** | High-performance catalog APIs with pagination, full-stack React 18 + Vite customer frontend. | ✅ Complete |
-| **Day 4** | **Customer Accounts & Stateless Security** | Stateless JWT authentication, BCrypt password hashing, Spring Security 6 filter chain. | ✅ Complete |
-| **Day 5** | **Redis-Backed Shopping Cart Engine** | Sub-millisecond cart caching using Redis Hashes, TTL expiry, and single-restaurant validation. | ✅ Complete |
-| **Day 6** | **Finite State Machine Order Engine** | Deterministic order lifecycle FSM enforcing legal state transitions and audit trails. | ✅ Complete |
-| **Day 7** | **Payment Service & Distributed Idempotency** | Multi-method payments (UPI, Cards, COD) with Redis `SETNX` idempotency locks. | ✅ Complete |
-| **Day 8** | **Apache Kafka Event-Driven Saga** | Distributed Saga choreography with Kafka topics, partitioned consumers, and DLQ retries. | ✅ Complete |
-| **Day 9** | **Kitchen Portal & Order Prep Ladder** | Dedicated kitchen staff dashboard (`/restaurant`) with sound chimes and prep controls. | ✅ Complete |
-| **Day 10** | **Redis Geospatial & Driver Dispatch** | Driver dispatch engine with Redis `GEOSEARCH` and Redisson distributed locking. | ✅ Complete |
-| **Day 11** | **Live Order Tracking Map & WebSockets** | WebSocket STOMP broker, Leaflet/OSRM road movement, and live driver GPS tracking. | ✅ Complete |
-| **Day 12** | **Gemini AI Support Bot & Recommender** | Gemini 2.5 Flash function calling, dual-city INR dish recommendation, and fallback engine. | ✅ Complete |
-| **Day 13** | **End-to-End System Integration Testing** | 10 comprehensive integration tests validating Sagas, concurrency, and state machines. | ✅ Complete |
-| **Day 14** | **Architecture Documentation & Showcase** | Production README, detailed architecture whitepaper, and interview talking points. | ✅ Complete |
-
----
-
 ## 🛠️ Tech Stack
 
 | Layer | Technology | Description |
@@ -279,27 +258,6 @@ Frontend Web Portal will be live at [http://localhost:5173](http://localhost:517
 
 ---
 
-## 💡 System Design Interview Talking Points
-
-When presenting this project in Senior / Staff Software Engineering interviews:
-
-1. **Why Choreographed Saga instead of Orchestrated Saga?**
-   - *Answer*: For a food delivery workflow, choreographed event emission across Kafka decouples services cleanly. Order Service publishes `OrderCreated`; Payment Service independently consumes and processes; Payment publishes `PaymentCompleted`; Kitchen and Driver Dispatch react autonomously. This avoids a single point of failure in an orchestrator service while preserving scalability.
-
-2. **How does the system eliminate race conditions in Driver Dispatch?**
-   - *Answer*: If 10 drivers tap "Accept" on the same order within milliseconds, simple database updates cause race conditions. We implement a **Redisson Distributed Lock** keyed on `lock:order:dispatch:{orderId}` with an acquisition timeout of 3s and lease time of 8s. Exactly one thread acquires the lock, checks `deliveryPartnerId == null`, assigns the driver, updates the driver's status to `BUSY`, and commits. The remaining 9 threads fail lock acquisition or see the order already claimed, returning `HTTP 409 Conflict`.
-
-3. **How is Payment Idempotency guaranteed?**
-   - *Answer*: Clients generate a unique `idempotencyKey` per checkout session. On payment submission, the backend executes an atomic Redis `SETNX` with a 5-minute TTL. If the key exists, it checks PostgreSQL for an existing transaction with that key and returns the cached receipt. If a request is in flight, it prevents double deductions.
-
-4. **How do you handle Kafka Consumer Failures and Message Replays?**
-   - *Answer*: Consumers use `ErrorHandlingDeserializer` and configure a `DeadLetterPublishingRecoverer` to route bad or un-processable messages to `order.events.dlq` after exponential backoff retries, preventing head-of-line blocking while preserving poison-pill messages for debugging.
-
-5. **How does the Live Tracking avoid 0-meter routing and frozen markers?**
-   - *Answer*: Many map applications place customer dropoff on top of the restaurant pin when precise GPS isn't provided. We engineered an automatic **Proximity Separation Guard** (minimum 1.2 km separation between restaurant and dropoff), query OSRM for real 55-point turn geometry, and interpolate driver positions along the actual road polyline over STOMP WebSockets.
-
----
-
 ## 🧪 Automated Testing Verification
 
 Execute the complete end-to-end integration test suite:
@@ -327,8 +285,6 @@ Expected output:
 
 ## 📄 Documentation Links
 - [Detailed System Architecture Whitepaper](docs/ARCHITECTURE.md)
-- [Multi-Day Project Implementation Roadmap](multi_day_plan.md)
-- [System Walkthrough & Verification Logs](walkthrough.md)
 
 ---
 

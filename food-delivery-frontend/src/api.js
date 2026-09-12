@@ -124,7 +124,7 @@ export const getPaymentReceipt = async (orderId) => {
   return response.data.data;
 };
 
-// Day 9: Kitchen Live Dashboard APIs
+// Kitchen Live Dashboard APIs
 export const getKitchenOrders = async (restaurantId) => {
   const response = await apiClient.get(`/kitchen/restaurants/${restaurantId}/orders`);
   return response.data.data;
@@ -151,7 +151,7 @@ export const rejectKitchenOrder = async (orderId, reason = 'Kitchen is overwhelm
 };
 
 // =========================================================================
-// Day 10: Driver Geospatial Dispatch & Redisson Locking APIs
+// Driver Geospatial Dispatch & Redisson Locking APIs
 // =========================================================================
 
 export const getDrivers = async () => {
@@ -202,7 +202,7 @@ export const completeDeliveryOrder = async (driverId, orderId) => {
 };
 
 // =========================================================================
-// Day 11: Real-Time Order Tracking & Simulation APIs (WebSockets / STOMP)
+// Real-Time Order Tracking & Simulation APIs (WebSockets / STOMP)
 // =========================================================================
 
 export const getOrderTracking = async (orderId) => {
@@ -227,7 +227,7 @@ export const simulateTrackingStep = async (orderId, progressRatio) => {
 };
 
 // =========================================================================
-// Day 12: Gemini AI Customer Support Bot & Food Recommendations
+// Gemini AI Customer Support Bot & Food Recommendations
 // =========================================================================
 
 export const sendAiChatMessage = async (message, currentOrderId = null, city = 'Noida', history = []) => {

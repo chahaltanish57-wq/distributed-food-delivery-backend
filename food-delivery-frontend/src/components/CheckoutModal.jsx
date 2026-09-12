@@ -207,7 +207,7 @@ export default function CheckoutModal({
                   Cash on Delivery / Pay on Delivery (UPI)
                 </strong>
                 <span style={{ fontSize: '0.78rem', color: '#7048e8' }}>
-                  Full online payment gateway (UPI/Cards) active in Day 7
+                  Pay via Cash, UPI QR code, or Cards upon delivery
                 </span>
               </div>
               <span style={{ background: '#7048e8', color: '#fff', fontSize: '0.72rem', fontWeight: 800, padding: '3px 8px', borderRadius: 6 }}>

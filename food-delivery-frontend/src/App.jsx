@@ -44,7 +44,7 @@ export default function App() {
   const [conflictModal, setConflictModal] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Day 6 & 7: Checkout & Payment State
+  // Checkout & Payment State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [pendingPaymentOrder, setPendingPaymentOrder] = useState(null);
@@ -52,7 +52,7 @@ export default function App() {
   const [successOrder, setSuccessOrder] = useState(null);
   const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
 
-  // Day 11: Live Order Tracking State
+  // Live Order Tracking State
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(() => {
     if (window.location.hash.startsWith('#track')) {
       const parts = window.location.hash.split('=');
@@ -61,7 +61,7 @@ export default function App() {
     return null;
   });
 
-  // Day 9, 10 & 11: Multi-Portal View Mode ('CUSTOMER' | 'KITCHEN' | 'DRIVER' | 'TRACKING')
+  // Multi-Portal View Mode ('CUSTOMER' | 'KITCHEN' | 'DRIVER' | 'TRACKING')
   const [viewMode, setViewMode] = useState(() => {
     if (window.location.hash.startsWith('#track')) return 'TRACKING';
     if (window.location.hash === '#driver') return 'DRIVER';
@@ -259,7 +259,7 @@ export default function App() {
     }
   };
 
-  // Day 6 & 7: Checkout & Payment Flow
+  // Checkout & Payment Flow
   const handleStartCheckout = () => {
     if (!user) {
       setPendingCheckoutAfterLogin(true);
@@ -365,7 +365,7 @@ export default function App() {
         onGoHome={handleGoHome}
       />
 
-      {/* Day 9: Kitchen Display System (KDS) View */}
+      {/* Kitchen Display System (KDS) View */}
       {viewMode === 'KITCHEN' ? (
         <KitchenDashboard
           restaurants={restaurants}
@@ -492,7 +492,7 @@ export default function App() {
         onCheckout={handleStartCheckout}
       />
 
-      {/* Day 6: Checkout Modal */}
+      {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
@@ -501,7 +501,7 @@ export default function App() {
         onConfirmOrder={handleConfirmOrder}
       />
 
-      {/* Day 7: Payment Modal */}
+      {/* Payment Modal */}
       <PaymentModal
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
@@ -509,7 +509,7 @@ export default function App() {
         onPaymentSuccess={handlePaymentSuccess}
       />
 
-      {/* Day 6 & 7: Order Success Modal with Payment Receipt */}
+      {/* Order Success Modal with Payment Receipt */}
       <OrderSuccessModal
         isOpen={!!successOrder}
         onClose={() => {
@@ -615,7 +615,7 @@ export default function App() {
         onAuthSuccess={handleAuthSuccess}
       />
 
-      {/* Day 12: Gemini AI Customer Support Bot & Food Recommendations */}
+      {/* Gemini AI Customer Support Bot & Food Recommendations */}
       <AiSupportDrawer
         currentOrderId={activeTrackingOrderId || 15}
         selectedCity={selectedCity}

@@ -65,7 +65,7 @@ public class OrderSagaConsumer {
         log.info("  Status: {}", event.getPaymentStatus());
         log.info("  [Saga Step 3] -> Notification dispatched: 'Payment of INR {} confirmed! Restaurant is preparing your food.'",
                 event.getAmount());
-        log.info("  [Saga Step 4] -> Signal sent to Driver Dispatch Engine (Day 10)...");
+        log.info("  [Saga Step 4] -> Signal sent to Driver Dispatch Engine...");
         log.info("================================================================================");
     }
 }

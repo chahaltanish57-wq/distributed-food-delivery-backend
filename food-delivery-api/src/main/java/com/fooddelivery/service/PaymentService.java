@@ -121,7 +121,7 @@ public class PaymentService {
             log.info("Payment #{} authorized for Order #{} [Txn: {}, Amount: ₹{}]",
                     savedPayment.getId(), order.getId(), transactionId, savedPayment.getAmount());
 
-            // Day 8: Publish Kafka PaymentCompletedEvent for distributed saga & notifications
+            // Publish Kafka PaymentCompletedEvent for distributed saga & notifications
             try {
                 PaymentCompletedEvent event = PaymentCompletedEvent.builder()
                         .paymentId(savedPayment.getId())

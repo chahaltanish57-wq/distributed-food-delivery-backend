@@ -531,7 +531,7 @@ function ReadyTicketCard({ order }) {
       </div>
 
       <div className="ready-footer">
-        <span className="dispatch-badge">Day 10: Driver Dispatch Assigned</span>
+        <span className="dispatch-badge">Driver Dispatch Assigned</span>
       </div>
     </div>
   );

@@ -128,7 +128,7 @@ public class OrderService {
 
         OrderDTO orderDTO = toDTO(savedOrder, request.getContactPhone() != null ? request.getContactPhone() : customer.getPhone());
 
-        // Day 8: Publish Kafka OrderCreatedEvent for distributed saga & kitchen dispatch
+        // Publish Kafka OrderCreatedEvent for distributed saga & kitchen dispatch
         try {
             OrderCreatedEvent event = OrderCreatedEvent.builder()
                     .orderId(savedOrder.getId())
