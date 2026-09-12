@@ -205,6 +205,9 @@ Real-time production metrics collected via **Micrometer → Prometheus → Grafa
 
 End-to-end request tracing is implemented via **Spring Boot 3 Micrometer Tracing (Brave bridge)** and **OpenZipkin**. Every inbound HTTP request receives a unique `traceId` which is automatically propagated through Spring Kafka producer and consumer records across broker boundaries.
 
+![Zipkin Distributed Tracing Waterfall](docs/zipkin-tracing.png)
+*Live Zipkin waterfall flamegraph for `POST /api/v1/orders` (Trace ID: `6aa55364611932dece084ad3a9f46a04`). Shows the root HTTP span (55.6ms), internal security authorization filter spans, followed by the Kafka `order.created send` producer span (6.9ms) and asynchronous `order.created receive` Saga consumer span (1.7ms) linked under the exact same trace context.*
+
 - **Zipkin Web UI**: [http://localhost:9411/zipkin/](http://localhost:9411/zipkin/)
 - **Cross-Service Propagation**: Correlates the client's `POST /api/v1/orders` HTTP span directly with the asynchronous `order.created send` producer span and `order.created receive` Saga consumer span under a single root trace.
 - **Trace Sampling**: Configured at `1.0` (100% trace capture) for deterministic debugging and performance profiling.
