@@ -200,3 +200,28 @@ export const completeDeliveryOrder = async (driverId, orderId) => {
   const response = await apiClient.patch(`/drivers/${driverId}/orders/${orderId}/deliver`);
   return response.data.data;
 };
+
+// =========================================================================
+// Day 11: Real-Time Order Tracking & Simulation APIs (WebSockets / STOMP)
+// =========================================================================
+
+export const getOrderTracking = async (orderId) => {
+  const response = await apiClient.get(`/tracking/orders/${orderId}`);
+  return response.data.data;
+};
+
+export const pingDriverTracking = async (orderId, latitude, longitude, headingDegrees = 45.0) => {
+  const response = await apiClient.post(`/tracking/orders/${orderId}/ping`, {
+    latitude,
+    longitude,
+    headingDegrees,
+  });
+  return response.data.data;
+};
+
+export const simulateTrackingStep = async (orderId, progressRatio) => {
+  const response = await apiClient.post(`/tracking/orders/${orderId}/simulate-step`, null, {
+    params: { progressRatio },
+  });
+  return response.data.data;
+};

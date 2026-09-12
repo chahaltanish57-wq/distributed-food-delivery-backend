@@ -7,7 +7,8 @@ import {
   Bike, 
   Sparkles,
   ArrowRight,
-  ChefHat
+  ChefHat,
+  Navigation
 } from 'lucide-react';
 
 export default function OrderSuccessModal({
@@ -15,7 +16,8 @@ export default function OrderSuccessModal({
   onClose,
   order,
   payment,
-  onOpenKitchen
+  onOpenKitchen,
+  onOpenTracking
 }) {
   if (!isOpen || !order) return null;
 
@@ -191,43 +193,87 @@ export default function OrderSuccessModal({
           </div>
         </div>
 
-        {/* Buttons */}
-        <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-          {onOpenKitchen && (
+        {/* Action Buttons */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginTop: '1.25rem' }}>
+          {onOpenTracking && (
             <button
               onClick={() => {
                 onClose();
-                onOpenKitchen();
+                onOpenTracking(order.id);
               }}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.85rem 1.25rem',
+                borderRadius: 14,
+                border: 'none',
+                background: '#00b074',
+                color: '#ffffff',
+                fontWeight: 900,
+                fontSize: '0.95rem',
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(0, 176, 116, 0.35)',
+                transition: 'all 0.15s'
+              }}
+            >
+              <Navigation size={18} />
+              <span>Track Live Order & Map</span>
+            </button>
+          )}
+
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            {onOpenKitchen && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenKitchen();
+                }}
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  padding: '0.75rem 0.85rem',
+                  borderRadius: 12,
+                  border: '1px solid #fc8019',
+                  background: '#fff9db',
+                  color: '#d9480f',
+                  fontWeight: 800,
+                  fontSize: '0.82rem',
+                  cursor: 'pointer'
+                }}
+              >
+                <ChefHat size={16} color="#fc8019" />
+                <span>Kitchen KDS</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
               style={{
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.45rem',
-                padding: '0.85rem 1rem',
-                borderRadius: 14,
-                border: '1px solid #fc8019',
-                background: '#fff9db',
-                color: '#d9480f',
-                fontWeight: 800,
-                fontSize: '0.88rem',
+                padding: '0.75rem 0.85rem',
+                borderRadius: 12,
+                border: '1px solid #ced4da',
+                background: '#ffffff',
+                color: '#495057',
+                fontWeight: 700,
+                fontSize: '0.82rem',
                 cursor: 'pointer'
               }}
             >
-              <ChefHat size={18} color="#fc8019" />
-              <span>Watch in Kitchen KDS</span>
+              <span>Storefront</span>
+              <ArrowRight size={16} />
             </button>
-          )}
-
-          <button
-            onClick={onClose}
-            className="cart-checkout-btn"
-            style={{ flex: 1, justifyContent: 'center', gap: '0.5rem', marginTop: 0 }}
-          >
-            <span>Storefront</span>
-            <ArrowRight size={18} />
-          </button>
+          </div>
         </div>
       </div>
     </div>

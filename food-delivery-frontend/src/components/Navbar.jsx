@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat, Bike } from 'lucide-react';
+import { UtensilsCrossed, MapPin, Search, ShoppingBag, User, LogOut, ChevronDown, ChefHat, Bike, Navigation } from 'lucide-react';
 
 export default function Navbar({
   user,
@@ -13,7 +13,8 @@ export default function Navbar({
   onSelectCity,
   viewMode,
   onToggleViewMode,
-  onSetViewMode
+  onSetViewMode,
+  activeTrackingOrderId
 }) {
   const [showCityMenu, setShowCityMenu] = useState(false);
 
@@ -199,6 +200,18 @@ export default function Navbar({
           <Bike size={17} />
           <span>{viewMode === 'DRIVER' ? 'Storefront' : 'Driver App'}</span>
         </button>
+
+        {/* Day 11: Live Order Tracking Switcher */}
+        {activeTrackingOrderId && (
+          <button 
+            className={`tracking-nav-toggle-btn ${viewMode === 'TRACKING' ? 'active' : ''}`}
+            onClick={() => onSetViewMode ? onSetViewMode(viewMode === 'TRACKING' ? 'CUSTOMER' : 'TRACKING') : null}
+            title="Live Order Tracking Map"
+          >
+            <Navigation size={16} />
+            <span>{viewMode === 'TRACKING' ? 'Storefront' : 'Track Order'}</span>
+          </button>
+        )}
 
         {/* Cart Section */}
         {viewMode === 'CUSTOMER' && (

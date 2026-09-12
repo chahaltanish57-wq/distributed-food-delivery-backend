@@ -9,6 +9,7 @@ import PaymentModal from './components/PaymentModal';
 import OrderSuccessModal from './components/OrderSuccessModal';
 import KitchenDashboard from './components/KitchenDashboard';
 import DriverDashboard from './components/DriverDashboard';
+import LiveTrackingView from './components/LiveTrackingView';
 import { 
   getRestaurants, 
   getCart, 
@@ -43,8 +44,18 @@ export default function App() {
   const [successOrder, setSuccessOrder] = useState(null);
   const [pendingCheckoutAfterLogin, setPendingCheckoutAfterLogin] = useState(false);
 
-  // Day 9 & 10: Multi-Portal View Mode ('CUSTOMER' | 'KITCHEN' | 'DRIVER')
+  // Day 11: Live Order Tracking State
+  const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(() => {
+    if (window.location.hash.startsWith('#track')) {
+      const parts = window.location.hash.split('=');
+      return parts[1] ? parseInt(parts[1], 10) : null;
+    }
+    return null;
+  });
+
+  // Day 9, 10 & 11: Multi-Portal View Mode ('CUSTOMER' | 'KITCHEN' | 'DRIVER' | 'TRACKING')
   const [viewMode, setViewMode] = useState(() => {
+    if (window.location.hash.startsWith('#track')) return 'TRACKING';
     if (window.location.hash === '#driver') return 'DRIVER';
     if (window.location.hash === '#restaurant') return 'KITCHEN';
     return 'CUSTOMER';
@@ -52,7 +63,13 @@ export default function App() {
 
   useEffect(() => {
     const handleHash = () => {
-      if (window.location.hash === '#driver') {
+      if (window.location.hash.startsWith('#track')) {
+        const parts = window.location.hash.split('=');
+        if (parts[1]) {
+          setActiveTrackingOrderId(parseInt(parts[1], 10));
+        }
+        setViewMode('TRACKING');
+      } else if (window.location.hash === '#driver') {
         setViewMode('DRIVER');
       } else if (window.location.hash === '#restaurant') {
         setViewMode('KITCHEN');
@@ -64,9 +81,13 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
-  const handleSetViewMode = (mode) => {
+  const handleSetViewMode = (mode, orderId = null) => {
     setViewMode(mode);
-    if (mode === 'DRIVER') {
+    if (mode === 'TRACKING') {
+      const targetId = orderId || activeTrackingOrderId;
+      if (orderId) setActiveTrackingOrderId(orderId);
+      window.location.hash = targetId ? `track=${targetId}` : 'track';
+    } else if (mode === 'DRIVER') {
       window.location.hash = 'driver';
     } else if (mode === 'KITCHEN') {
       window.location.hash = 'restaurant';
@@ -212,6 +233,9 @@ export default function App() {
       ...pendingPaymentOrder,
       status: 'ORDER_PLACED'
     });
+    if (pendingPaymentOrder?.id) {
+      setActiveTrackingOrderId(pendingPaymentOrder.id);
+    }
     showToast(`Payment of ₹${pendingPaymentOrder?.totalAmount} verified! Order confirmed.`);
   };
 
@@ -279,6 +303,7 @@ export default function App() {
         viewMode={viewMode}
         onToggleViewMode={handleToggleViewMode}
         onSetViewMode={handleSetViewMode}
+        activeTrackingOrderId={activeTrackingOrderId}
       />
 
       {/* Day 9: Kitchen Display System (KDS) View */}
@@ -292,6 +317,13 @@ export default function App() {
         <DriverDashboard
           onBackToStorefront={() => handleSetViewMode('CUSTOMER')}
           showToast={showToast}
+        />
+      ) : viewMode === 'TRACKING' ? (
+        <LiveTrackingView
+          orderId={activeTrackingOrderId}
+          onBack={() => handleSetViewMode('CUSTOMER')}
+          onOpenKitchen={() => handleSetViewMode('KITCHEN')}
+          onOpenDriver={() => handleSetViewMode('DRIVER')}
         />
       ) : (
         <main className="container">
@@ -430,6 +462,9 @@ export default function App() {
         onOpenKitchen={() => {
           setViewMode('KITCHEN');
           window.location.hash = 'restaurant';
+        }}
+        onOpenTracking={(orderId) => {
+          handleSetViewMode('TRACKING', orderId);
         }}
       />
 

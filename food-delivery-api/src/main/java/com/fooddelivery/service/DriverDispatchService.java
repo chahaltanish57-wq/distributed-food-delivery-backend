@@ -41,6 +41,7 @@ public class DriverDispatchService {
     private final DeliveryPartnerRepository deliveryPartnerRepository;
     private final OrderRepository orderRepository;
     private final OrderService orderService;
+    private final OrderTrackingService orderTrackingService;
     private final StringRedisTemplate redisTemplate;
     private final RedissonClient redissonClient;
 
@@ -85,6 +86,9 @@ public class DriverDispatchService {
             );
             log.info("[Redis GEOADD] Indexed driver #{} coordinates ({}, {}) in key [{}]",
                     driverId, latitude, longitude, REDIS_GEO_KEY);
+
+            // Broadcast live telemetry to active customer tracking channels
+            orderTrackingService.broadcastActiveOrdersForDriver(driverId, latitude, longitude);
         }
 
         return toDTO(saved);
@@ -269,6 +273,13 @@ public class DriverDispatchService {
         log.info("[Driver Dispatch] Order #{} successfully claimed by Driver {} ({}) using Redisson Lock",
                 orderId, driver.getName(), driver.getPhone());
 
+        // Broadcast driver assigned event to live tracking
+        try {
+            orderTrackingService.broadcastOrderState(orderId);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast order state on claim for Order #{}: {}", orderId, e.getMessage());
+        }
+
         return toEnrichedOrderDTO(savedOrder, driver);
     }
 
@@ -287,6 +298,13 @@ public class DriverDispatchService {
         DeliveryPartner driver = deliveryPartnerRepository.findById(driverId).orElse(null);
         OrderDTO updated = orderService.updateOrderStatus(orderId, OrderStatus.OUT_FOR_DELIVERY);
         log.info("[Driver Action] Driver #{} picked up Order #{}. Now OUT_FOR_DELIVERY.", driverId, orderId);
+
+        // Broadcast OUT_FOR_DELIVERY event to live tracking
+        try {
+            orderTrackingService.broadcastOrderState(orderId);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast order state on pickup for Order #{}: {}", orderId, e.getMessage());
+        }
 
         if (driver != null) {
             updated.setDeliveryPartnerId(driver.getId());
@@ -318,6 +336,13 @@ public class DriverDispatchService {
         deliveryPartnerRepository.save(driver);
         log.info("[Driver Action] Driver #{} delivered Order #{}. Status set to DELIVERED, driver AVAILABLE.",
                 driverId, orderId);
+
+        // Broadcast DELIVERED event to live tracking
+        try {
+            orderTrackingService.broadcastOrderState(orderId);
+        } catch (Exception e) {
+            log.warn("Failed to broadcast order state on deliver for Order #{}: {}", orderId, e.getMessage());
+        }
 
         updated.setDeliveryPartnerId(driver.getId());
         updated.setDeliveryPartnerName(driver.getName());

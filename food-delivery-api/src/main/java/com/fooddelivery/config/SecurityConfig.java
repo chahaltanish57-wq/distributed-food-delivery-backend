@@ -41,6 +41,8 @@ public class SecurityConfig {
                                 "/api/v1/kitchen/**",
                                 "/api/v1/cart/**",
                                 "/api/v1/drivers/**",
+                                "/api/v1/tracking/**",
+                                "/ws-delivery/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
