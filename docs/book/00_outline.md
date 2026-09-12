@@ -18,7 +18,8 @@ This textbook is intentionally written for:
 
 ### Prerequisite Assumptions
 - **Zero prior knowledge of distributed systems**: Concepts like Message Queues (Kafka), In-Memory Caching (Redis), Distributed Locks (Redisson), WebSockets (STOMP), Observability (Prometheus/Grafana), and Distributed Tracing (Zipkin) are taught from **first principles**.
-- High-level familiarity with basic programming fundamentals (variables, if/else, functions, classes).
+- **Zero prior knowledge of Spring Boot or Enterprise Java Frameworks**: Readers are NOT expected to know Spring Boot. Core framework mechanisms—such as **Inversion of Control (IoC)**, **Dependency Injection (DI)**, **Java Annotations (`@Service`, `@Repository`, `@Transactional`, `@RestController`)**, **Embedded Tomcat web servers**, and **`application.yml` externalized configuration**—are explained from scratch using physical analogies before any Java code is introduced.
+- High-level familiarity only with basic general programming fundamentals (variables, if/else statements, functions, classes).
 
 ---
 
