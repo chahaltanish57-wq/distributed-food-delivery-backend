@@ -17,13 +17,16 @@ import {
   Radio,
   ChefHat,
   Zap,
-  ArrowRight,
-  ArrowUp,
-  CornerUpLeft,
-  CornerUpRight
+  ArrowRight, 
+  ArrowUp, 
+  CornerUpLeft, 
+  CornerUpRight,
+  Globe,
+  Layers
 } from 'lucide-react';
 import { TrackingSocketClient } from '../trackingSocket';
 import { getOrderTracking, simulateTrackingStep, pingDriverTracking } from '../api';
+import LeafletMapView from './LeafletMapView';
 
 // Mathematical Piecewise Road Trajectory Engine (Zero Diagonal Cut-across)
 function calculateRoadNavigation(progressRatio) {
@@ -137,7 +140,7 @@ function calculatePickupNavigation(pickupRatio) {
   return { x, y, heading, instruction, iconName, distToTurn, trailPath };
 }
 
-export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpenDriver }) {
+export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpenDriver, theme }) {
   const [trackingData, setTrackingData] = useState(null);
   const [connectionStatus, setConnectionStatus] = useState('CONNECTING');
   const [loading, setLoading] = useState(true);
@@ -147,6 +150,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
   const [pickupProgress, setPickupProgress] = useState(0.0);
   const [isLivePickupDriving, setIsLivePickupDriving] = useState(false);
   const [driveSpeed, setDriveSpeed] = useState(1);
+  const [mapMode, setMapMode] = useState('OSM'); // 'OSM' | 'STYLIZED'
   const socketClientRef = useRef(null);
 
   // 1. Fetch initial snapshot from REST
@@ -528,6 +532,26 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               </div>
             </div>
 
+            {/* Map Mode Selector (Real OpenStreetMap vs Stylized Vector) */}
+            <div className="map-mode-pill">
+              <button
+                className={`map-mode-btn ${mapMode === 'OSM' ? 'active' : ''}`}
+                onClick={() => setMapMode('OSM')}
+                title="Real OpenStreetMap with genuine roads and live satellite/street network"
+              >
+                <Globe size={13} />
+                <span>OpenStreetMap</span>
+              </button>
+              <button
+                className={`map-mode-btn ${mapMode === 'STYLIZED' ? 'active' : ''}`}
+                onClick={() => setMapMode('STYLIZED')}
+                title="Stylized Vector HUD Canvas"
+              >
+                <Layers size={13} />
+                <span>Vector HUD</span>
+              </button>
+            </div>
+
             <div className="map-hud-dist-box">
               <span className="map-hud-dist-sub">
                 {isDeliveryLeg ? 'TO CUSTOMER' : 'TO RESTAURANT'}
@@ -538,8 +562,19 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
             </div>
           </div>
 
-          {/* SVG Vector Map Canvas */}
-          <div className="vector-map-canvas">
+          {/* Real OpenStreetMap View OR Stylized SVG Vector Canvas */}
+          {mapMode === 'OSM' ? (
+            <LeafletMapView
+              trackingData={trackingData}
+              isDeliveryLeg={isDeliveryLeg}
+              pickupProgress={pickupProgress}
+              deliveryProgress={progressRatio}
+              theme={theme}
+              isLiveDriving={isLiveDriving}
+              isLivePickupDriving={isLivePickupDriving}
+            />
+          ) : (
+            <div className="vector-map-canvas">
             
             {/* Live Turn-by-Turn Navigation HUD Pill */}
             <div className="turn-by-turn-hud">
@@ -815,6 +850,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
               </div>
             </div>
           </div>
+        )}
 
           {/* Interactive Route Simulation Controls */}
           <div className="map-simulator-toolbar">

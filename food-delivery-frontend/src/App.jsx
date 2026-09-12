@@ -11,6 +11,7 @@ import KitchenDashboard from './components/KitchenDashboard';
 import DriverDashboard from './components/DriverDashboard';
 import LiveTrackingView from './components/LiveTrackingView';
 import MyOrdersDrawer from './components/MyOrdersDrawer';
+import AiSupportDrawer from './components/AiSupportDrawer';
 import { 
   getRestaurants, 
   getCart, 
@@ -382,6 +383,7 @@ export default function App() {
           onBack={() => handleSetViewMode('CUSTOMER')}
           onOpenKitchen={() => handleSetViewMode('KITCHEN')}
           onOpenDriver={() => handleSetViewMode('DRIVER')}
+          theme={theme}
         />
       ) : (
         <main className="container">
@@ -611,6 +613,20 @@ export default function App() {
           setPendingCheckoutAfterLogin(false);
         }}
         onAuthSuccess={handleAuthSuccess}
+      />
+
+      {/* Day 12: Gemini AI Customer Support Bot & Food Recommendations */}
+      <AiSupportDrawer
+        currentOrderId={activeTrackingOrderId || 15}
+        selectedCity={selectedCity}
+        onTrackOrder={(orderId) => {
+          setActiveTrackingOrderId(orderId);
+          handleSetViewMode('TRACKING', orderId);
+        }}
+        onAddToCart={(restaurantId, itemId, itemName, price) => {
+          handleAddToCart({ id: itemId, name: itemName, price }, { id: restaurantId });
+        }}
+        theme={theme}
       />
 
       {/* Toast Notification */}

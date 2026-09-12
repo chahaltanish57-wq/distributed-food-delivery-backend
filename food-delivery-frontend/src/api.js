@@ -225,3 +225,22 @@ export const simulateTrackingStep = async (orderId, progressRatio) => {
   });
   return response.data.data;
 };
+
+// =========================================================================
+// Day 12: Gemini AI Customer Support Bot & Food Recommendations
+// =========================================================================
+
+export const sendAiChatMessage = async (message, currentOrderId = null, city = 'Noida', history = []) => {
+  const response = await apiClient.post('/ai/chat', {
+    message,
+    currentOrderId,
+    city,
+    history,
+  });
+  return response.data;
+};
+
+export const getAiStatus = async () => {
+  const response = await apiClient.get('/ai/status');
+  return response.data;
+};
