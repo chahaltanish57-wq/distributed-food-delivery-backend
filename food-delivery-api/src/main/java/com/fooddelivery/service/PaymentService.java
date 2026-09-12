@@ -11,6 +11,7 @@ import com.fooddelivery.repository.OrderRepository;
 import com.fooddelivery.repository.PaymentRepository;
 import com.fooddelivery.common.event.PaymentCompletedEvent;
 import com.fooddelivery.kafka.producer.PaymentEventProducer;
+import io.micrometer.core.instrument.Counter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,6 +35,8 @@ public class PaymentService {
     private final StringRedisTemplate redisTemplate;
     private final OrderStateMachine orderStateMachine;
     private final PaymentEventProducer paymentEventProducer;
+    private final Counter paymentsSuccessCounter;
+    private final Counter paymentsFailedCounter;
 
     /**
      * Process payment with distributed Redis SETNX idempotency lock.
@@ -55,7 +58,8 @@ public class PaymentService {
 
         if (Boolean.FALSE.equals(acquired)) {
             log.warn("Duplicate payment request detected for idempotency key: {}", request.getIdempotencyKey());
-            
+            paymentsFailedCounter.increment();
+
             // Check if payment already succeeded in DB (Idempotent replay)
             Optional<Payment> existingPayment = paymentRepository.findByIdempotencyKey(request.getIdempotencyKey().trim());
             if (existingPayment.isPresent()) {
@@ -118,6 +122,7 @@ public class PaymentService {
                     .build();
 
             Payment savedPayment = paymentRepository.save(payment);
+            paymentsSuccessCounter.increment();
             log.info("Payment #{} authorized for Order #{} [Txn: {}, Amount: ₹{}]",
                     savedPayment.getId(), order.getId(), transactionId, savedPayment.getAmount());
 

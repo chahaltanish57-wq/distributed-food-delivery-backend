@@ -16,6 +16,7 @@ import com.fooddelivery.repository.OrderRepository;
 import com.fooddelivery.repository.RestaurantRepository;
 import com.fooddelivery.common.event.OrderCreatedEvent;
 import com.fooddelivery.kafka.producer.OrderEventProducer;
+import io.micrometer.core.instrument.Counter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,8 @@ public class OrderService {
     private final CartService cartService;
     private final OrderStateMachine orderStateMachine;
     private final OrderEventProducer orderEventProducer;
+    private final Counter ordersPlacedCounter;
+    private final Counter ordersDeliveredCounter;
 
     /**
      * Convert active Redis cart into persistent PostgreSQL Order in PAYMENT_PENDING state.
@@ -120,6 +123,7 @@ public class OrderService {
         }
 
         Order savedOrder = orderRepository.save(order);
+        ordersPlacedCounter.increment();
         log.info("Order #{} placed successfully for Customer {} with total amount ₹{}",
                 savedOrder.getId(), customer.getEmail(), savedOrder.getTotalAmount());
 
@@ -197,6 +201,10 @@ public class OrderService {
         order.setStatus(nextStatus);
         Order updated = orderRepository.save(order);
         log.info("Order #{} status transitioned to {}", orderId, nextStatus);
+
+        if (nextStatus == OrderStatus.DELIVERED) {
+            ordersDeliveredCounter.increment();
+        }
 
         return toDTO(updated, updated.getCustomer().getPhone());
     }

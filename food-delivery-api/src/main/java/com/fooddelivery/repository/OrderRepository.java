@@ -33,4 +33,11 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @EntityGraph(attributePaths = {"customer", "restaurant", "orderItems"})
     List<Order> findByStatusInAndDeliveryPartnerIdIsNullOrderByCreatedAtDesc(java.util.Collection<OrderStatus> statuses);
+
+    /**
+     * Used by MetricsConfig Gauge beans — returns live count of orders in a given status.
+     * Spring Data JPA derives this automatically from the method name.
+     */
+    long countByStatus(OrderStatus status);
 }
+
