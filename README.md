@@ -11,6 +11,8 @@
 [![Leaflet](https://img.shields.io/badge/Leaflet-OSM%20%2B%20OSRM-199900.svg)](https://leafletjs.com/)
 [![Google Gemini](https://img.shields.io/badge/Google%20Gemini-2.5%20Flash-8E75B2.svg)](https://ai.google.dev/)
 [![Docker Compose](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://www.docker.com/)
+[![Prometheus](https://img.shields.io/badge/Prometheus-v2.53-E6522C.svg)](https://prometheus.io/)
+[![Grafana](https://img.shields.io/badge/Grafana-11.1-F46800.svg)](https://grafana.com/)
 
 An enterprise-grade, event-driven distributed food delivery platform inspired by **Swiggy** and **Zomato**. Engineered to demonstrate production-grade distributed systems patterns: **Choreographed Saga Pattern** with Apache Kafka, **Order Finite State Machines**, **Redis Geospatial Indexing**, **Redisson Distributed Locks** to eliminate driver dispatch race conditions, **Real-Time Live Driver GPS Tracking** via STOMP WebSockets and OSRM turn-by-turn road interpolation, and an intelligent **AI Support Concierge** powered by **Google Gemini 2.5 Flash Function Calling**.
 
@@ -172,6 +174,34 @@ sequenceDiagram
 
 ---
 
+## 📊 Observability Stack (Prometheus + Grafana)
+
+Real-time production metrics collected via **Micrometer → Prometheus → Grafana** with a pre-built auto-provisioned dashboard. Opens instantly at `http://localhost:3000` — no login required.
+
+![Grafana Dashboard — Full Overview](docs/grafana-dashboard.png)
+*Full dashboard: HTTP request rate (0.455 req/s), API p99 latency (107ms), 6 orders placed, latency percentile breakdown, and live Kafka pipeline status.*
+
+![Grafana Dashboard — Business Metrics](docs/grafana-metrics.png)
+*Payment success/failure counters (idempotency in action), live order status by Kafka stage, JVM heap memory, and HikariCP connection pool.*
+
+### Metrics Tracked
+
+| Metric | Type | Description |
+| :--- | :--- | :--- |
+| `orders_placed_total` | Counter | Increments on every successful order creation |
+| `orders_delivered_total` | Counter | Increments when order reaches `DELIVERED` state |
+| `payments_success_total` | Counter | Tracks successful payment authorizations |
+| `payments_failed_total` | Counter | Tracks duplicate/rejected payments (idempotency proof) |
+| `websocket_sessions_active` | Gauge | Live count of active GPS tracking WebSocket sessions |
+| `orders_pending_gauge` | Gauge | Real-time DB-backed count of `PAYMENT_PENDING` orders |
+| `orders_in_kitchen_gauge` | Gauge | Real-time count of orders currently `PREPARING` |
+| `orders_out_for_delivery_gauge` | Gauge | Real-time count of `OUT_FOR_DELIVERY` orders |
+| `http_server_requests_seconds` | Histogram | p50/p95/p99 latency percentiles per endpoint |
+| `hikaricp_connections_active` | Gauge | Live DB connection pool utilization |
+| `jvm_memory_used_bytes` | Gauge | JVM heap and non-heap memory breakdown |
+
+---
+
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
@@ -195,6 +225,8 @@ docker compose ps
 | **Redis 7** | `6379` | `redis-cli -p 6379` |
 | **Apache Kafka** | `9092` | Kafka Broker (KRaft mode) |
 | **Kafka UI** | `8085` | [http://localhost:8085](http://localhost:8085) |
+| **Prometheus** | `9090` | [http://localhost:9090](http://localhost:9090) — metrics query UI & target health |
+| **Grafana** | `3000` | [http://localhost:3000](http://localhost:3000) — pre-built dashboard, no login required |
 
 ### 2. Start the Backend API
 ```bash
