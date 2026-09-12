@@ -3160,8 +3160,34 @@ body {
 }
 
 /* ==========================================================================
-   NAVBAR EXTENSIONS: MY ORDERS & DARK MODE TOGGLE
+   NAVBAR EXTENSIONS: HOME, MY ORDERS & DARK MODE TOGGLE
    ========================================================================== */
+
+.nav-home-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border-radius: 12px;
+  border: 1.5px solid #ced4da;
+  background: #ffffff;
+  color: #343a40;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-home-btn:hover {
+  background: #f8f9fa;
+  border-color: #fc8019;
+  color: #fc8019;
+}
+.nav-home-btn.active {
+  background: #fc8019;
+  border-color: #fc8019;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(252, 128, 25, 0.3);
+}
 
 .nav-orders-btn {
   display: flex;
@@ -3572,14 +3598,21 @@ body.dark-theme {
   color: #f1f3f5;
 }
 
+.dark-theme .nav-home-btn,
 .dark-theme .nav-orders-btn {
   background-color: #1c222c;
   border-color: #2b3545;
   color: #f1f3f5;
 }
+.dark-theme .nav-home-btn:hover,
 .dark-theme .nav-orders-btn:hover {
   background-color: #252c38;
   color: #fc8019;
+}
+.dark-theme .nav-home-btn.active {
+  background-color: #fc8019;
+  border-color: #fc8019;
+  color: #ffffff;
 }
 
 .dark-theme .theme-toggle-btn {

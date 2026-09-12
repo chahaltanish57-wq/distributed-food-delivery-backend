@@ -12,7 +12,8 @@ import {
   Navigation,
   Sun,
   Moon,
-  Receipt
+  Receipt,
+  Home
 } from 'lucide-react';
 
 export default function Navbar({
@@ -31,9 +32,20 @@ export default function Navbar({
   activeTrackingOrderId,
   theme,
   onToggleTheme,
-  onOpenOrders
+  onOpenOrders,
+  onGoHome
 }) {
   const [showCityMenu, setShowCityMenu] = useState(false);
+
+  const handleHomeClick = () => {
+    if (onGoHome) {
+      onGoHome();
+    } else if (onSetViewMode) {
+      onSetViewMode('CUSTOMER');
+    }
+    window.location.hash = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const cities = [
     { name: 'Noida', area: 'Sector 18 Market' },
@@ -43,10 +55,25 @@ export default function Navbar({
   return (
     <header className="navbar">
       <div className="nav-left">
-        <div className="brand-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <div 
+          className="brand-logo" 
+          onClick={handleHomeClick}
+          style={{ cursor: 'pointer' }}
+          title="Swiggy - Back to Home & Restaurant Menus"
+        >
           <UtensilsCrossed size={28} />
           <span>Swiggy Distributed</span>
         </div>
+
+        {/* Explicit Home Button */}
+        <button 
+          className={`nav-home-btn ${viewMode === 'CUSTOMER' ? 'active' : ''}`}
+          onClick={handleHomeClick}
+          title="Return directly to Restaurant Menus & Storefront"
+        >
+          <Home size={17} />
+          <span>Home</span>
+        </button>
 
         {/* City Selector Pill */}
         <div style={{ position: 'relative' }}>

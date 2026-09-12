@@ -153,6 +153,18 @@ export default function App() {
     }
   };
 
+  // Explicit Go Home Handler: Navigates directly back to restaurant storefront
+  const handleGoHome = () => {
+    setViewMode('CUSTOMER');
+    setSelectedRestaurant(null);
+    setIsCartOpen(false);
+    setIsOrdersDrawerOpen(false);
+    setIsCheckoutOpen(false);
+    setIsPaymentOpen(false);
+    window.location.hash = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // 1. Fetch active Cart from Redis on initial load
   useEffect(() => {
     getCart()
@@ -349,6 +361,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={handleToggleTheme}
         onOpenOrders={() => setIsOrdersDrawerOpen(true)}
+        onGoHome={handleGoHome}
       />
 
       {/* Day 9: Kitchen Display System (KDS) View */}
