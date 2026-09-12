@@ -2836,15 +2836,40 @@ body {
 .osm-map-wrapper {
   position: relative;
   width: 100%;
-  height: 480px;
-  background: #e9ecef;
+  height: 520px;
+  min-height: 480px;
+  background: #f4f3f0;
   overflow: hidden;
+  border-radius: 0 0 16px 16px;
 }
 
 .osm-leaflet-canvas {
-  width: 100%;
-  height: 100%;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 480px;
   z-index: 5;
+}
+
+/* Force Leaflet tile image dimensions to prevent squashing, tearing, or grey squares */
+.leaflet-container img.leaflet-tile {
+  max-width: none !important;
+  max-height: none !important;
+  width: 256px !important;
+  height: 256px !important;
+  image-rendering: auto;
+}
+
+.leaflet-container {
+  font-family: inherit !important;
+  background: #f4f3f0 !important;
+}
+
+.dark-theme .leaflet-container {
+  background: #14181f !important;
+}
+
+.dark-theme .osm-map-wrapper {
+  background: #14181f;
 }
 
 /* Floating GPS Telemetry HUD */
