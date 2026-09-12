@@ -47,7 +47,8 @@ public class OrderStateMachine {
 
         // Kitchen & Delivery progression
         VALID_TRANSITIONS.put(OrderStatus.PREPARING, Set.of(
-                OrderStatus.READY_FOR_PICKUP
+                OrderStatus.READY_FOR_PICKUP,
+                OrderStatus.OUT_FOR_DELIVERY
         ));
 
         VALID_TRANSITIONS.put(OrderStatus.READY_FOR_PICKUP, Set.of(
@@ -66,6 +67,9 @@ public class OrderStateMachine {
     public boolean isValidTransition(OrderStatus current, OrderStatus next) {
         if (current == null || next == null) {
             return false;
+        }
+        if (current == next) {
+            return true;
         }
         return VALID_TRANSITIONS.getOrDefault(current, Collections.emptySet()).contains(next);
     }

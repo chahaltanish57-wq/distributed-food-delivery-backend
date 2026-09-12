@@ -156,6 +156,10 @@ public class OrderService {
         Order order = orderRepository.findWithDetailsById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found with id: " + orderId));
 
+        if (order.getStatus() == nextStatus) {
+            return toDTO(order, order.getCustomer() != null ? order.getCustomer().getPhone() : null);
+        }
+
         orderStateMachine.validateTransition(order.getStatus(), nextStatus);
 
         order.setStatus(nextStatus);

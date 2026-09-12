@@ -108,6 +108,7 @@ export default function LeafletMapView({
   const plannedPolylineRef = useRef(null);
   const traveledPolylineRef = useRef(null);
   const initialFitDoneRef = useRef(false);
+  const resizeObserverRef = useRef(null);
 
   // Stable primitives from trackingData to prevent re-render loops on driver ticks
   const restaurantId = trackingData?.restaurantId;
@@ -235,24 +236,50 @@ export default function LeafletMapView({
       mapInstanceRef.current = map;
 
       // Force layout size detection at staggered intervals
-      map.invalidateSize();
-      setTimeout(() => map.invalidateSize(), 100);
-      setTimeout(() => map.invalidateSize(), 400);
+      try { map.invalidateSize(); } catch (_) {}
+      const t1 = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.invalidateSize(); } catch (_) {}
+        }
+      }, 100);
+      const t2 = setTimeout(() => {
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.invalidateSize(); } catch (_) {}
+        }
+      }, 400);
 
       // Auto resize listener
       const resizeObserver = new ResizeObserver(() => {
-        map.invalidateSize();
+        if (mapInstanceRef.current && mapContainerRef.current) {
+          try {
+            mapInstanceRef.current.invalidateSize();
+          } catch (_) {}
+        }
       });
       resizeObserver.observe(mapContainerRef.current);
-    }
+      resizeObserverRef.current = resizeObserver;
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-        initialFitDoneRef.current = false;
-      }
-    };
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        if (resizeObserverRef.current) {
+          try { resizeObserverRef.current.disconnect(); } catch (_) {}
+          resizeObserverRef.current = null;
+        }
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.remove(); } catch (_) {}
+          mapInstanceRef.current = null;
+          tileLayerRef.current = null;
+          driverMarkerRef.current = null;
+          restMarkerRef.current = null;
+          custMarkerRef.current = null;
+          outpostMarkerRef.current = null;
+          plannedPolylineRef.current = null;
+          traveledPolylineRef.current = null;
+          initialFitDoneRef.current = false;
+        }
+      };
+    }
   }, []);
 
   // 3. Smooth Tile Layer Switching on Theme change (WITHOUT destroying map)
@@ -288,10 +315,13 @@ export default function LeafletMapView({
       iconAnchor: [20, 20]
     });
 
-    if (restMarkerRef.current) {
+    if (restMarkerRef.current && map.hasLayer(restMarkerRef.current)) {
       restMarkerRef.current.setLatLng(coordinates.restaurant);
       restMarkerRef.current.setIcon(restIcon);
     } else {
+      if (restMarkerRef.current) {
+        try { map.removeLayer(restMarkerRef.current); } catch (_) {}
+      }
       restMarkerRef.current = L.marker(coordinates.restaurant, { icon: restIcon }).addTo(map);
     }
 
@@ -310,10 +340,13 @@ export default function LeafletMapView({
       iconAnchor: [20, 20]
     });
 
-    if (custMarkerRef.current) {
+    if (custMarkerRef.current && map.hasLayer(custMarkerRef.current)) {
       custMarkerRef.current.setLatLng(coordinates.customer);
       custMarkerRef.current.setIcon(custIcon);
     } else {
+      if (custMarkerRef.current) {
+        try { map.removeLayer(custMarkerRef.current); } catch (_) {}
+      }
       custMarkerRef.current = L.marker(coordinates.customer, { icon: custIcon }).addTo(map);
     }
 
@@ -331,10 +364,13 @@ export default function LeafletMapView({
       iconAnchor: [16, 16]
     });
 
-    if (outpostMarkerRef.current) {
+    if (outpostMarkerRef.current && map.hasLayer(outpostMarkerRef.current)) {
       outpostMarkerRef.current.setLatLng(coordinates.outpost);
       outpostMarkerRef.current.setIcon(outpostIcon);
     } else {
+      if (outpostMarkerRef.current) {
+        try { map.removeLayer(outpostMarkerRef.current); } catch (_) {}
+      }
       outpostMarkerRef.current = L.marker(coordinates.outpost, { icon: outpostIcon }).addTo(map);
     }
 
@@ -366,7 +402,7 @@ export default function LeafletMapView({
     const routeColor = isDeliveryLeg ? '#00b074' : '#fc8019';
 
     // Planned dashed line
-    if (plannedPolylineRef.current) {
+    if (plannedPolylineRef.current && map.hasLayer(plannedPolylineRef.current)) {
       plannedPolylineRef.current.setLatLngs(activeRoute);
       plannedPolylineRef.current.setStyle({
         color: routeColor,
@@ -375,6 +411,9 @@ export default function LeafletMapView({
         weight: 5
       });
     } else {
+      if (plannedPolylineRef.current) {
+        try { map.removeLayer(plannedPolylineRef.current); } catch (_) {}
+      }
       plannedPolylineRef.current = L.polyline(activeRoute, {
         color: routeColor,
         dashArray: '8, 8',
@@ -387,7 +426,7 @@ export default function LeafletMapView({
     const traveledPoints = activeRoute.slice(0, currentNav.index + 1);
     traveledPoints.push([currentNav.lat, currentNav.lng]);
 
-    if (traveledPolylineRef.current) {
+    if (traveledPolylineRef.current && map.hasLayer(traveledPolylineRef.current)) {
       traveledPolylineRef.current.setLatLngs(traveledPoints);
       traveledPolylineRef.current.setStyle({
         color: routeColor,
@@ -395,6 +434,9 @@ export default function LeafletMapView({
         weight: 7
       });
     } else {
+      if (traveledPolylineRef.current) {
+        try { map.removeLayer(traveledPolylineRef.current); } catch (_) {}
+      }
       traveledPolylineRef.current = L.polyline(traveledPoints, {
         color: routeColor,
         opacity: 0.95,
@@ -412,8 +454,11 @@ export default function LeafletMapView({
       ? `${Math.round(activeRatio * 100)}%`
       : (pickupProgress >= 0.95 ? 'At Restaurant' : 'To Pickup');
 
-    // If marker doesn't exist yet, create it once with DOM structure
-    if (!driverMarkerRef.current) {
+    // If marker doesn't exist yet OR is not attached to current map, create it and add to map
+    if (!driverMarkerRef.current || !map.hasLayer(driverMarkerRef.current)) {
+      if (driverMarkerRef.current) {
+        try { map.removeLayer(driverMarkerRef.current); } catch (_) {}
+      }
       const bikerHtml = `
         <div class="osm-biker-marker ${isDeliveryLeg ? 'delivery-mode' : 'pickup-mode'}">
           <div class="biker-beacon-glow"></div>

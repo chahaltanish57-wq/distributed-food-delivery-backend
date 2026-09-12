@@ -269,23 +269,50 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
       orderId,
       (incomingTelemetry) => {
         setTrackingData((prev) => {
+          if (!prev) return incomingTelemetry;
+
+          const STATUS_ORDER = [
+            'CREATED',
+            'PAYMENT_PENDING',
+            'ORDER_PLACED',
+            'RESTAURANT_ACCEPTED',
+            'PREPARING',
+            'READY_FOR_PICKUP',
+            'OUT_FOR_DELIVERY',
+            'DELIVERED'
+          ];
+          const prevRank = STATUS_ORDER.indexOf(prev.orderStatus);
+          const incomingRank = STATUS_ORDER.indexOf(incomingTelemetry.orderStatus);
+
+          // Never regress status if incoming has lower rank (e.g. READY_FOR_PICKUP when already OUT_FOR_DELIVERY)
+          const effectiveStatus = (incomingRank < prevRank) ? prev.orderStatus : incomingTelemetry.orderStatus;
+          const effectiveProgress = (incomingRank < prevRank)
+            ? Math.max(prev.progressPercent || 0, incomingTelemetry.progressPercent || 0)
+            : (incomingTelemetry.progressPercent ?? prev.progressPercent);
+
           // If status transitioned to OUT_FOR_DELIVERY, AUTO-START LIVE ROAD DELIVERY!
-          if (incomingTelemetry.orderStatus === 'OUT_FOR_DELIVERY') {
-            if (!prev || prev.orderStatus !== 'OUT_FOR_DELIVERY') {
+          if (effectiveStatus === 'OUT_FOR_DELIVERY') {
+            if (prev.orderStatus !== 'OUT_FOR_DELIVERY') {
               setIsLivePickupDriving(false);
               setPickupProgress(1.0);
               setIsLiveDriving(true);
             }
           } else if (
             incomingTelemetry.driverName && 
-            ['RESTAURANT_ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'].includes(incomingTelemetry.orderStatus)
+            ['RESTAURANT_ACCEPTED', 'PREPARING', 'READY_FOR_PICKUP'].includes(effectiveStatus)
           ) {
-            if (!prev?.driverName) {
+            if (!prev.driverName) {
               setPickupProgress(0.0);
               setIsLivePickupDriving(true);
             }
           }
-          return incomingTelemetry;
+
+          return {
+            ...incomingTelemetry,
+            orderStatus: effectiveStatus,
+            progressPercent: effectiveProgress,
+            message: (incomingRank < prevRank) ? prev.message : incomingTelemetry.message
+          };
         });
       },
       (status) => {
@@ -464,7 +491,7 @@ export default function LiveTrackingView({ orderId, onBack, onOpenKitchen, onOpe
     trackingData.restaurantName?.toLowerCase().includes('rajpur');
 
   // Determine whether driver is in Pickup Leg (Outpost -> Restro) or Delivery Leg (Restro -> Customer)
-  const isDeliveryLeg = ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(trackingData.orderStatus);
+  const isDeliveryLeg = ['OUT_FOR_DELIVERY', 'DELIVERED'].includes(trackingData.orderStatus) || isLiveDriving;
   const deliveryNav = calculateRoadNavigation(progressRatio);
   const pickupNav = calculatePickupNavigation(pickupProgress);
   const activeNav = isDeliveryLeg ? deliveryNav : pickupNav;

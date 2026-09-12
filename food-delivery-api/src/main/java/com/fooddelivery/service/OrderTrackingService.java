@@ -128,6 +128,23 @@ public class OrderTrackingService {
             }
         }
 
+        // Auto-progress order state in DB during tracking simulation
+        if (clampedRatio >= 0.98) {
+            if (order.getStatus() != OrderStatus.DELIVERED) {
+                order.setStatus(OrderStatus.DELIVERED);
+                orderRepository.save(order);
+                log.info("Order #{} marked as DELIVERED via tracking simulation", orderId);
+            }
+        } else if (clampedRatio >= 0.05) {
+            if (order.getStatus() == OrderStatus.READY_FOR_PICKUP ||
+                order.getStatus() == OrderStatus.PREPARING ||
+                order.getStatus() == OrderStatus.RESTAURANT_ACCEPTED) {
+                order.setStatus(OrderStatus.OUT_FOR_DELIVERY);
+                orderRepository.save(order);
+                log.info("Order #{} transitioned to OUT_FOR_DELIVERY via tracking simulation", orderId);
+            }
+        }
+
         int progressPercent = (int) Math.round(clampedRatio * 100.0);
         TrackingUpdateDTO update = buildTrackingDTO(order, driver, currentLat, currentLng, heading, progressPercent);
         return broadcastTrackingUpdate(orderId, update);
